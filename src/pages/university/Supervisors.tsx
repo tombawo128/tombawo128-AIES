@@ -9,7 +9,7 @@ export const UniversitySupervisors: React.FC = () => {
   const supervisors = data.users.filter(
     (u) =>
       (u.role === 'academicSupervisor' || u.role === 'companySupervisor') &&
-      u.universityId === user!.universityId,
+      u.university_id === user!.university_id,
   );
 
   return (
