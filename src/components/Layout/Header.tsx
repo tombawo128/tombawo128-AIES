@@ -5,14 +5,14 @@ import { Icon } from '../Icon';
 export const Header: React.FC<{ setOpen: (v: boolean) => void }> = ({ setOpen }) => {
   const { data, user, setData } = useApp();
   if (!user) return null;
-  const unread = data.notifications.filter((n) => n.userId === user.id && !n.read).length;
+  const unread = data.notifications.filter((n) => n.user_id === user.id && !n.read).length;
 
   const markAllRead = () => {
     if (unread === 0) return;
     setData({
       ...data,
       notifications: data.notifications.map((n) =>
-        n.userId === user.id ? { ...n, read: true } : n,
+        n.user_id === user.id ? { ...n, read: true } : n,
       ),
     });
   };

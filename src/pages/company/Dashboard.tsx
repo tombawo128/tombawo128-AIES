@@ -7,12 +7,12 @@ import { Empty } from '../../components/common/Empty';
 
 export const CompanyDashboard: React.FC = () => {
   const { user, data } = useApp();
-  const companyInternships = data.internships.filter((i) => i.companyId === user!.companyId);
+  const companyInternships = data.internships.filter((i) => i.company_id === user!.company_id);
   const companyApps = data.applications.filter((a) =>
-    companyInternships.some((i) => i.id === a.internshipId),
+    companyInternships.some((i) => i.id === a.internship_id),
   );
   const open = companyInternships.filter((i) => i.status === 'Open').length;
-  const accepted = companyApps.filter((a) => a.status === 'Accepted').length;
+  const accepted = companyApps.filter((a) => a.status === 'accepted').length;
 
   return (
     <>
@@ -38,8 +38,8 @@ export const CompanyDashboard: React.FC = () => {
           </div>
           {companyApps.length ? (
             companyApps.slice(0, 4).map((a) => {
-              const student = data.users.find((u) => u.id === a.studentId);
-              const internship = companyInternships.find((i) => i.id === a.internshipId);
+              const student = data.users.find((u) => u.id === a.student_id);
+              const internship = companyInternships.find((i) => i.id === a.internship_id);
               return (
                 <div className="row" key={a.id}>
                   <div>

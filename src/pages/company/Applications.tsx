@@ -21,7 +21,7 @@ export const CompanyApplications: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const fetchApplications = async () => {
-    if (!user?.companyId) {
+    if (!user?.company_id) {
       setLoading(false);
       return;
     }
@@ -31,7 +31,7 @@ export const CompanyApplications: React.FC = () => {
     const { data: internships } = await supabase
       .from('internships')
       .select('id')
-      .eq('company_id', user.companyId);
+      .eq('company_id', user.company_id);
 
     const internshipIds = (internships || []).map((i) => i.id);
     if (internshipIds.length === 0) {

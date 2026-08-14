@@ -6,7 +6,7 @@ import { Empty } from '../../components/common/Empty';
 
 export const AcademicStudents: React.FC = () => {
   const { data, user } = useApp();
-  const students = data.users.filter((u) => u.role === 'student' && u.universityId === user!.universityId);
+  const students = data.users.filter((u) => u.role === 'student' && u.university_id === user!.university_id);
 
   return (
     <>

@@ -5,9 +5,9 @@ import { Metric } from '../../components/common/Metric';
 
 export const AcademicDashboard: React.FC = () => {
   const { data, user } = useApp();
-  const students = data.users.filter((u) => u.role === 'student' && u.universityId === user!.universityId);
-  const reports = data.reports.filter((r) => students.some((s) => s.id === r.studentId));
-  const pending = reports.filter((r) => r.status === 'Pending').length;
+  const students = data.users.filter((u) => u.role === 'student' && u.university_id === user!.university_id);
+  const reports = data.reports.filter((r) => students.some((s) => s.id === r.student_id));
+  const pending = reports.filter((r) => r.status === 'submitted').length;
 
   return (
     <>

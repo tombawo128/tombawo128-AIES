@@ -56,7 +56,6 @@ import { AdminUniversities } from './pages/admin/Universities';
 import { AdminSettings } from './pages/admin/Settings';
 import { AdminLogs } from './pages/admin/Logs';
 
-// --- FIX 1: Added proper TypeScript types for props ---
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -90,19 +89,14 @@ const MainLayout = ({ children }: MainLayoutProps) => {
               <path d="M1 1H19M1 8H19M1 15H19" stroke="#23212c" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-
           <div className="headerRight"></div>
         </header>
-
         <div className="content">{children}</div>
       </div>
     </div>
   );
 };
 
-
-
-// --- FIX 2: Added proper TypeScript types for ProtectedShell ---
 interface ProtectedShellProps {
   roles: Role[];
   children: React.ReactNode;
@@ -122,9 +116,7 @@ const App = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<Forgot />} />
         <Route path="/privacy" element={<Legal />} />
-        
         <Route path="/terms" element={<Legal terms />} />
-        
         <Route path="/" element={<Navigate to="/login" replace />} />
 
         <Route
@@ -225,7 +217,5 @@ const App = () => {
     </AppProvider>
   );
 };
-
-
 
 export default App;

@@ -6,10 +6,10 @@ import { Empty } from '../../components/common/Empty';
 
 export const AcademicReports: React.FC = () => {
   const { data, user, setData } = useApp();
-  const students = data.users.filter((u) => u.role === 'student' && u.universityId === user!.universityId);
-  const reports = data.reports.filter((r) => students.some((s) => s.id === r.studentId));
+  const students = data.users.filter((u) => u.role === 'student' && u.university_id === user!.university_id);
+  const reports = data.reports.filter((r) => students.some((s) => s.id === r.student_id));
 
-  const review = (id: string, status: 'Approved' | 'Rejected') => {
+  const review = (id: string, status: 'approved' | 'rejected') => {
     setData({
       ...data,
       reports: data.reports.map((r) => (r.id === id ? { ...r, status } : r)),
@@ -22,7 +22,7 @@ export const AcademicReports: React.FC = () => {
       <div className="card reportList">
         {reports.length ? (
           reports.map((r) => {
-            const student = students.find((s) => s.id === r.studentId);
+            const student = students.find((s) => s.id === r.student_id);
             return (
               <div className="report" key={r.id}>
                 <div>
@@ -34,12 +34,12 @@ export const AcademicReports: React.FC = () => {
                 </div>
                 <div className="rowActions">
                   <Status value={r.status} />
-                  {r.status === 'Pending' && (
+                  {r.status === 'submitted' && (
                     <>
-                      <button className="primary smallBtn" onClick={() => review(r.id, 'Approved')}>
+                      <button className="primary smallBtn" onClick={() => review(r.id, 'approved')}>
                         Approve
                       </button>
-                      <button className="ghost smallBtn" onClick={() => review(r.id, 'Rejected')}>
+                      <button className="ghost smallBtn" onClick={() => review(r.id, 'rejected')}>
                         Reject
                       </button>
                     </>

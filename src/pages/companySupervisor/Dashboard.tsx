@@ -5,14 +5,14 @@ import { Metric } from '../../components/common/Metric';
 
 export const CompanySupervisorDashboard: React.FC = () => {
   const { data, user } = useApp();
-  const companyInternships = data.internships.filter((i) => i.companyId === user!.companyId);
+  const companyInternships = data.internships.filter((i) => i.company_id === user!.company_id);
   const acceptedApps = data.applications.filter(
     (a) =>
-      a.status === 'Accepted' &&
-      companyInternships.some((i) => i.id === a.internshipId),
+      a.status === 'accepted' &&
+      companyInternships.some((i) => i.id === a.internship_id),
   );
   const evaluations = data.evaluations.filter((e) =>
-    acceptedApps.some((a) => a.id === e.applicationId),
+    acceptedApps.some((a) => a.id === e.application_id),
   );
 
   return (

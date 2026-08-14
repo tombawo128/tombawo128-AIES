@@ -20,6 +20,7 @@ export type User = {
   address?: string;
   major?: string;
   department?: string;
+  supervisor_id?: string;    
   created_at?: string;
 };
 
@@ -34,6 +35,7 @@ export type Internship = {
   deadline: string;
   positions: number;
   created_at?: string;
+  status?: 'Open' | 'Closed' | 'Draft';
 };
 
 export type Application = {
@@ -43,6 +45,7 @@ export type Application = {
   date: string;
   status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
   cover_letter?: string;
+  placement_date?: string;     
 };
 
 export type Report = {
@@ -56,6 +59,9 @@ export type Report = {
   date: string;
   status: 'submitted' | 'reviewed' | 'approved' | 'rejected';
   file_name?: string;
+  feedback?: string;         
+  reviewer_id?: string;       
+  reviewed_at?: string;       
 };
 
 export type Evaluation = {

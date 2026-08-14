@@ -1,97 +1,117 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { Logo } from '../Logo';
-import { Icon } from '../Icon';
-import { Role } from '../../types';
+import { supabase } from '../../supabaseClient';
 
-const navs: Record<Role, { label: string; path: string; icon: string }[]> = {
-  student: [
-    ['Dashboard', '/student/dashboard', 'grid'],
-    ['Internships', '/student/internships', 'briefcase'],
-    ['Applications', '/student/applications', 'file'],
-    ['Reports', '/student/reports', 'file'],
-    ['Evaluations', '/student/evaluations', 'chart'],
-    ['Settings', '/student/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-  company: [
-    ['Dashboard', '/company/dashboard', 'grid'],
-    ['Internships', '/company/internships', 'briefcase'],
-    ['Applications', '/company/applications', 'users'],
-    ['Interns', '/company/interns', 'users'],
-    ['Evaluations', '/company/evaluations', 'chart'],
-    ['Settings', '/company/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-  university: [
-    ['Dashboard', '/university/dashboard', 'grid'],
-    ['Students', '/university/students', 'users'],
-    ['Departments', '/university/departments', 'file'],
-    ['Supervisors', '/university/supervisors', 'users'],
-    ['Reports', '/university/reports', 'file'],
-    ['Settings', '/university/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-  academicSupervisor: [
-    ['Dashboard', '/supervisor-academic/dashboard', 'grid'],
-    ['Students', '/supervisor-academic/students', 'users'],
-    ['Reports', '/supervisor-academic/reports', 'file'],
-    ['Settings', '/supervisor-academic/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-  companySupervisor: [
-    ['Dashboard', '/supervisor-company/dashboard', 'grid'],
-    ['Interns', '/supervisor-company/interns', 'users'],
-    ['Evaluations', '/supervisor-company/evaluations', 'chart'],
-    ['Settings', '/supervisor-company/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-  admin: [
-    ['Dashboard', '/admin/dashboard', 'grid'],
-    ['Users', '/admin/users', 'users'],
-    ['Companies', '/admin/companies', 'briefcase'],
-    ['Universities', '/admin/universities', 'file'],
-    ['Audit Log', '/admin/logs', 'file'],
-    ['Settings', '/admin/settings', 'settings'],
-  ].map(([label, path, icon]) => ({ label, path, icon })),
-};
+interface SidebarProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
 
-export const Sidebar: React.FC<{ open: boolean; setOpen: (v: boolean) => void }> = ({
-  open,
-  setOpen,
-}) => {
-  const { user, logout } = useApp();
-  if (!user) return null;
-  const roleLabel = (r: Role) =>
-    ({
-      student: 'Student',
-      company: 'Company',
-      university: 'University',
-      academicSupervisor: 'Academic Supervisor',
-      companySupervisor: 'Company Supervisor',
-      admin: 'Administrator',
-    }[r]);
+export const Sidebar = ({ open, setOpen }: SidebarProps) => {
+  const { user } = useApp();
+  const navigate = useNavigate();
+
+  const closeSidebar = () => setOpen(false);
+  const toggleSidebar = () => setOpen(!open);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+    closeSidebar();
+  };
+
+  // Build role‑based navigation links
+  const links = [
+    { to: '/student/dashboard', label: 'Dashboard', roles: ['student'] },
+    { to: '/student/internships', label: 'Internships', roles: ['student'] },
+    { to: '/student/applications', label: 'Applications', roles: ['student'] },
+    { to: '/student/reports', label: 'Reports', roles: ['student'] },
+    { to: '/student/evaluations', label: 'Evaluations', roles: ['student'] },
+    { to: '/student/settings', label: 'Settings', roles: ['student'] },
+
+    { to: '/company/dashboard', label: 'Dashboard', roles: ['company'] },
+    { to: '/company/internships', label: 'Internships', roles: ['company'] },
+    { to: '/company/applications', label: 'Applications', roles: ['company'] },
+    { to: '/company/interns', label: 'Interns', roles: ['company'] },
+    { to: '/company/evaluations', label: 'Evaluations', roles: ['company'] },
+    { to: '/company/settings', label: 'Settings', roles: ['company'] },
+
+    { to: '/university/dashboard', label: 'Dashboard', roles: ['university'] },
+    { to: '/university/students', label: 'Students', roles: ['university'] },
+    { to: '/university/departments', label: 'Departments', roles: ['university'] },
+    { to: '/university/supervisors', label: 'Supervisors', roles: ['university'] },
+    { to: '/university/reports', label: 'Reports', roles: ['university'] },
+    { to: '/university/settings', label: 'Settings', roles: ['university'] },
+
+    { to: '/supervisor-academic/dashboard', label: 'Dashboard', roles: ['academicSupervisor'] },
+    { to: '/supervisor-academic/students', label: 'Students', roles: ['academicSupervisor'] },
+    { to: '/supervisor-academic/reports', label: 'Reports', roles: ['academicSupervisor'] },
+    { to: '/supervisor-academic/settings', label: 'Settings', roles: ['academicSupervisor'] },
+
+    { to: '/supervisor-company/dashboard', label: 'Dashboard', roles: ['companySupervisor'] },
+    { to: '/supervisor-company/interns', label: 'Interns', roles: ['companySupervisor'] },
+    { to: '/supervisor-company/evaluations', label: 'Evaluations', roles: ['companySupervisor'] },
+    { to: '/supervisor-company/settings', label: 'Settings', roles: ['companySupervisor'] },
+
+    { to: '/admin/dashboard', label: 'Dashboard', roles: ['admin'] },
+    { to: '/admin/users', label: 'Users', roles: ['admin'] },
+    { to: '/admin/companies', label: 'Companies', roles: ['admin'] },
+    { to: '/admin/universities', label: 'Universities', roles: ['admin'] },
+    { to: '/admin/logs', label: 'Logs', roles: ['admin'] },
+    { to: '/admin/settings', label: 'Settings', roles: ['admin'] },
+  ];
+
+  const filteredLinks = links.filter((link) =>
+    link.roles.includes(user?.role || 'student')
+  );
 
   return (
-    <aside className={`sidebar ${open ? 'open' : ''}`}>
-      <Logo light />
-      <div className="role">{roleLabel(user.role)}</div>
-      <nav>
-        {navs[user.role].map((n) => (
-          <NavLink
-            key={n.path}
-            to={n.path}
-            className={({ isActive }) => (isActive ? 'active' : '')}
-            onClick={() => setOpen(false)}
-          >
-            <Icon name={n.icon} />
-            <span>{n.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-      <button
-        className="sideLogout"
-        onClick={logout}
-      >
-        <Icon name="logout" />
-        Sign out
+    <>
+      {/* Hamburger – visible on all screens, handles toggle */}
+      <button className="mobileMenu" onClick={toggleSidebar} aria-label="Toggle menu">
+        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 1H19M1 8H19M1 15H19" stroke="#23212c" strokeWidth="2" strokeLinecap="round" />
+        </svg>
       </button>
-    </aside>
+
+      {/* Scrim */}
+      {open && <div className="scrim" onClick={closeSidebar} />}
+
+      {/* Sidebar drawer */}
+      <aside className={`sidebar ${open ? 'open' : ''}`}>
+        <NavLink to="/dashboard" className="brand light" onClick={closeSidebar}>
+          <div className="brandMark">AI</div>
+          <div>
+            <strong>AIES</strong>
+            <small>ACADEMIC INTERNSHIPS</small>
+          </div>
+        </NavLink>
+
+        <div className="role">{user?.role || 'Student'}</div>
+
+        <nav>
+          {filteredLinks.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) => (isActive ? 'active' : '')}
+              onClick={closeSidebar} // ✅ FIX: closes drawer on any navigation
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <button className="sideLogout" onClick={handleLogout}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign out
+        </button>
+      </aside>
+    </>
   );
 };
