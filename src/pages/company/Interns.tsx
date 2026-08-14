@@ -1,34 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
+import { supabase } from '../../supabaseClient';
 
 export const CompanyInterns: React.FC = () => {
-  const { data, user } = useApp();
-  const companyInternships = data.internships.filter((i) => i.companyId === user!.companyId);
-  const acceptedApps = data.applications.filter(
-    (a) =>
-      a.status === 'Accepted' &&
-      companyInternships.some((i) => i.id === a.internshipId),
-  );
-  const interns = acceptedApps.map((a) => data.users.find((u) => u.id === a.studentId)).filter(Boolean);
+  const { user } = useApp();
+  const [interns, setInterns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInterns = async () => {
+      if (!user?.companyId) {
+        setLoading(false);
+        return;
+      }
+      const { data: internships } = await supabase.from('internships').select('id, title').eq('company_id', user.companyId);
+      const internshipIds = (internships || []).map((i) => i.id);
+      if (internshipIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('applications')
+        .select('id, status, internship_id, users(id, name, email), internships(title)')
+        .in('internship_id', internshipIds)
+        .eq('status', 'accepted');
+      setInterns((data as any) || []);
+      setLoading(false);
+    };
+    fetchInterns();
+  }, [user]);
 
   return (
     <>
-      <PageHead eyebrow="Company workspace" title="Current interns" description="Students currently placed at your organization." />
+      <PageHead eyebrow="Company" title="Current interns" description="Students accepted into your internship programs." />
       <div className="cards3">
-        {interns.length ? (
-          interns.map((s) => (
-            <div className="card" key={s!.id}>
-              <div className="companyMark large">{s!.name.slice(0, 1)}</div>
-              <h2>{s!.name}</h2>
-              <p>{s!.email}</p>
-              <Status value="Active" />
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+        ) : interns.length ? (
+          interns.map((i) => (
+            <div className="card" key={i.id}>
+              <div className="companyMark large">{i.users?.name?.slice(0, 1) || '?'}</div>
+              <h2>{i.users?.name || 'Unknown'}</h2>
+              <p>{i.users?.email}</p>
+              <p><strong>Position:</strong> {i.internships?.title || '—'}</p>
             </div>
           ))
         ) : (
-          <Empty title="No current interns" text="Accepted applications will appear here." />
+          <Empty title="No interns yet" text="Accepted applicants will appear here." />
         )}
       </div>
     </>

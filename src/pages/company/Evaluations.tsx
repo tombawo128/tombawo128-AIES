@@ -1,108 +1,113 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
 import { Empty } from '../../components/common/Empty';
-import { id } from '../../utils';
+import { supabase } from '../../supabaseClient';
+
+const CRITERIA = ['punctuality', 'teamwork', 'technicalSkills', 'communication', 'initiative'];
 
 export const CompanyEvaluations: React.FC = () => {
-  const { data, user, setData } = useApp();
-  const companyInternships = data.internships.filter((i) => i.companyId === user!.companyId);
-  const relevantApps = data.applications.filter(
-    (a) =>
-      a.status === 'Accepted' &&
-      companyInternships.some((i) => i.id === a.internshipId),
-  );
-  const [appId, setAppId] = useState('');
-  const [scores, setScores] = useState<Record<string, number>>({
-    Technical: 3,
-    Communication: 3,
-    Teamwork: 3,
-    Professionalism: 3,
-    ProblemSolving: 3,
-  });
+  const { user } = useApp();
+  const [interns, setInterns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<any>(null);
+  const [scores, setScores] = useState<Record<string, number>>({});
   const [comments, setComments] = useState('');
+  const [message, setMessage] = useState('');
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const next = {
-      ...data,
-      evaluations: [
-        ...data.evaluations,
-        {
-          id: id('e'),
-          applicationId: appId,
-          evaluatorId: user!.id,
-          scores,
-          comments,
-          date: new Date().toISOString().slice(0, 10),
-        },
-      ],
-    };
-    setData(next);
-    setComments('');
-    setAppId('');
+  const fetchInterns = async () => {
+    if (!user?.companyId) {
+      setLoading(false);
+      return;
+    }
+    const { data: internships } = await supabase.from('internships').select('id').eq('company_id', user.companyId);
+    const internshipIds = (internships || []).map((i) => i.id);
+    if (internshipIds.length === 0) {
+      setLoading(false);
+      return;
+    }
+    const { data } = await supabase
+      .from('applications')
+      .select('id, users(name, email), internships(title)')
+      .in('internship_id', internshipIds)
+      .eq('status', 'accepted');
+    setInterns((data as any) || []);
+    setLoading(false);
   };
 
-  const existing = data.evaluations.filter((e) =>
-    relevantApps.some((a) => a.id === e.applicationId),
-  );
+  useEffect(() => {
+    fetchInterns();
+  }, [user]);
+
+  const openForm = (app: any) => {
+    setSelected(app);
+    setScores({});
+    setComments('');
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const { error } = await supabase.from('evaluations').insert({
+      application_id: selected.id,
+      evaluator_id: user?.id,
+      scores,
+      comments,
+    });
+    if (error) {
+      setMessage('Failed to submit: ' + error.message);
+      return;
+    }
+    setMessage('Evaluation submitted!');
+    setSelected(null);
+    setTimeout(() => setMessage(''), 3000);
+  };
 
   return (
     <>
-      <PageHead eyebrow="Company workspace" title="Evaluations" description="Assess internship performance using a 1–5 scale." />
-      <form className="card formGrid" onSubmit={submit}>
-        <label className="span2">
-          Placement
-          <select value={appId} onChange={(e) => setAppId(e.target.value)} required>
-            <option value="">Select placement</option>
-            {relevantApps.map((a) => {
-              const student = data.users.find((u) => u.id === a.studentId);
-              const internship = companyInternships.find((i) => i.id === a.internshipId);
-              return (
-                <option key={a.id} value={a.id}>
-                  {student?.name} · {internship?.title}
-                </option>
-              );
-            })}
-          </select>
-        </label>
-        {Object.keys(scores).map((k) => (
-          <label key={k}>
-            {k}
-            <select
-              value={scores[k]}
-              onChange={(e) => setScores({ ...scores, [k]: Number(e.target.value) })}
-            >
-              {[1, 2, 3, 4, 5].map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
+      <PageHead eyebrow="Company" title="Evaluations" description="Rate and review your interns' performance." />
+      {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
+
+      {selected ? (
+        <form className="card formGrid" onSubmit={submit}>
+          <h3 className="span2">Evaluating {selected.users?.name}</h3>
+          {CRITERIA.map((c) => (
+            <label key={c}>
+              {c.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())} (1-5)
+              <input
+                type="number"
+                min={1}
+                max={5}
+                required
+                value={scores[c] || ''}
+                onChange={(e) => setScores({ ...scores, [c]: Number(e.target.value) })}
+              />
+            </label>
+          ))}
+          <label className="span2">Comments
+            <textarea value={comments} onChange={(e) => setComments(e.target.value)} required />
           </label>
-        ))}
-        <label className="span2">
-          Comments
-          <textarea value={comments} onChange={(e) => setComments(e.target.value)} required />
-        </label>
-        <button className="primary span2">Submit evaluation</button>
-      </form>
-      <div className="card reportList">
-        {existing.length ? (
-          existing.map((e) => {
-            const avg = Object.values(e.scores).reduce((a, b) => a + b, 0) / Object.values(e.scores).length;
-            return (
-              <div className="report" key={e.id}>
+          <button className="primary">Submit evaluation</button>
+          <button type="button" className="ghost" onClick={() => setSelected(null)}>Cancel</button>
+        </form>
+      ) : (
+        <div className="card">
+          {loading ? (
+            <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+          ) : interns.length ? (
+            interns.map((i) => (
+              <div className="row" key={i.id}>
                 <div>
-                  <strong>Evaluation · {e.date}</strong>
-                  <p>{e.comments}</p>
+                  <strong>{i.users?.name}</strong>
+                  <span>{i.internships?.title || '—'}</span>
                 </div>
-                <div className="score">{avg.toFixed(1)} / 5</div>
+                <button className="primary" onClick={() => openForm(i)}>Evaluate</button>
               </div>
-            );
-          })
-        ) : (
-          <Empty title="No evaluations yet" text="Submit an evaluation above." />
-        )}
-      </div>
+            ))
+          ) : (
+            <Empty title="No interns to evaluate" text="Accepted interns will appear here for evaluation." />
+          )}
+        </div>
+      )}
     </>
   );
 };
