@@ -92,7 +92,6 @@ export const Register: React.FC = () => {
       }
 
       if (role === 'university') {
-        // Ensure university name is provided
         if (!universityName.trim()) {
           throw new Error('University name is required for university registration.');
         }
@@ -103,12 +102,12 @@ export const Register: React.FC = () => {
           .single();
         if (uniError) throw new Error(uniError.message);
         universityIdToUse = uni.id;
-        console.log('Created university with ID:', universityIdToUse); // debug
+        console.log('Created university with ID:', universityIdToUse);
       }
 
-      // 3. Insert user profile
+      // 3. Insert user profile with auth_id
       const profileData = {
-        auth_id: authData.user.id,
+        auth_id: authData.user.id,          // ✅ CRITICAL – links to Supabase Auth
         name,
         email,
         role,
@@ -124,12 +123,11 @@ export const Register: React.FC = () => {
       const { error: profileError } = await supabase.from('users').insert(profileData);
       if (profileError) {
         console.error('Profile insert error:', profileError);
+        // If the error is about missing 'auth_id' column, suggest running the SQL
+        if (profileError.message.includes('auth_id')) {
+          throw new Error('Database setup incomplete: Please contact the administrator to add the auth_id column to the users table.');
+        }
         throw new Error(profileError.message);
-      }
-
-      // 4. (Optional) Double‑check that university_id was saved for university role
-      if (role === 'university' && !universityIdToUse) {
-        console.warn('University ID was not set in profile!');
       }
 
       setMessage('Account created. You must wait for admin approval to sign in.');
