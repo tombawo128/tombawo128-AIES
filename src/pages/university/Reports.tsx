@@ -1,52 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
+import { Status } from '../../components/Status';
+import { supabase } from '../../supabaseClient';
 
 export const UniversityReports: React.FC = () => {
-  const { data, user } = useApp();
-  const students = data.users.filter((u) => u.role === 'student' && u.universityId === user!.universityId);
-  const reports = data.reports.filter((r) => students.some((s) => s.id === r.studentId));
+  const { user } = useApp();
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const review = (id: string, status: 'Approved' | 'Rejected') => {
-    
-  };
+  useEffect(() => {
+    const fetchReports = async () => {
+      if (!user?.universityId) {
+        setLoading(false);
+        return;
+      }
+      const { data: students } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('universityId', user.universityId)
+        .eq('role', 'student');
+
+      const studentIds = (students || []).map((s) => s.id);
+      const nameMap: Record<string, string> = {};
+      (students || []).forEach((s) => { nameMap[s.id] = s.name; });
+
+      if (studentIds.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const { data: reportsData } = await supabase
+        .from('reports')
+        .select('*')
+        .in('student_id', studentIds)
+        .order('date', { ascending: false });
+
+      setReports((reportsData || []).map((r) => ({ ...r, studentName: nameMap[r.student_id] || 'Unknown' })));
+      setLoading(false);
+    };
+    fetchReports();
+  }, [user]);
 
   return (
     <>
-      <PageHead eyebrow="University workspace" title="Weekly reports" description="Review student internship reports." />
-      <div className="card reportList">
-        {reports.length ? (
-          reports.map((r) => {
-            const student = students.find((s) => s.id === r.studentId);
-            return (
-              <div className="report" key={r.id}>
-                <div>
-                  <strong>Week {r.week}</strong>
-                  <span>{student?.name} · {r.date}</span>
-                  <p>{r.activities}</p>
-                  <small>Challenges: {r.challenges}</small>
-                  <small>Skills: {r.skills}</small>
-                </div>
-                <div className="rowActions">
-                  <Status value={r.status} />
-                  {r.status === 'Pending' && (
-                    <>
-                      <button className="primary smallBtn" onClick={() => review(r.id, 'Approved')}>
-                        Approve
-                      </button>
-                      <button className="ghost smallBtn" onClick={() => review(r.id, 'Rejected')}>
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </div>
+      <PageHead eyebrow="University" title="Student reports" description="Weekly reports submitted by your students." />
+      <div className="card">
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+        ) : reports.length ? (
+          reports.map((r) => (
+            <div className="report" key={r.id}>
+              <div>
+                <strong>{r.studentName} — Week {r.week}</strong>
+                <span>{r.date} · {r.hours || 0} hours</span>
+                <p>{r.activities}</p>
               </div>
-            );
-          })
+              <Status value={r.status} />
+            </div>
+          ))
         ) : (
-          <Empty title="No reports" text="No student reports submitted yet." />
+          <Empty title="No reports yet" text="Weekly reports from your students will appear here." />
         )}
       </div>
     </>
