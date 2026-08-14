@@ -112,7 +112,7 @@ export const AdminUsers: React.FC = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const approveUser = async (u: UserRow) => {
+  const approve_User = async (u: UserRow) => {
     const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
     if (error) {
       setMessage('Failed to approve: ' + error.message);
