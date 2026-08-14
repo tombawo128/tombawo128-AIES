@@ -13,7 +13,6 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const navigate = useNavigate();
 
   const closeSidebar = () => setOpen(false);
-  const toggleSidebar = () => setOpen(!open);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -21,7 +20,6 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
     closeSidebar();
   };
 
-  // Build role‑based navigation links
   const links = [
     { to: '/student/dashboard', label: 'Dashboard', roles: ['student'] },
     { to: '/student/internships', label: 'Internships', roles: ['student'] },
@@ -68,17 +66,8 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
 
   return (
     <>
-      {/* Hamburger – visible on all screens, handles toggle */}
-      <button className="mobileMenu" onClick={toggleSidebar} aria-label="Toggle menu">
-        <svg width="20" height="16" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M1 1H19M1 8H19M1 15H19" stroke="#23212c" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </button>
-
-      {/* Scrim */}
       {open && <div className="scrim" onClick={closeSidebar} />}
 
-      {/* Sidebar drawer */}
       <aside className={`sidebar ${open ? 'open' : ''}`}>
         <NavLink to="/dashboard" className="brand light" onClick={closeSidebar}>
           <div className="brandMark">AI</div>
@@ -96,7 +85,7 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
               key={link.to}
               to={link.to}
               className={({ isActive }) => (isActive ? 'active' : '')}
-              onClick={closeSidebar} // ✅ FIX: closes drawer on any navigation
+              onClick={closeSidebar}
             >
               {link.label}
             </NavLink>
