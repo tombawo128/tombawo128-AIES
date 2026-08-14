@@ -128,12 +128,11 @@ button {
 }
 
 .main {
-  margin-left: 0; /* No margin by default */
+  margin-left: 0;
   min-height: 100vh;
   transition: margin-left 0.2s ease-in-out;
 }
 
-/* When sidebar opens on desktop, shift the main content */
 .sidebar.open ~ .main {
   margin-left: 250px;
 }
@@ -145,7 +144,7 @@ button {
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
-  justify-content: space-between; /* FIXED: Puts hamburger left, headerRight right */
+  justify-content: space-between;
   padding: 0 32px;
   position: sticky;
   top: 0;
@@ -941,29 +940,43 @@ footer a {
 }
 
 @media (max-width: 800px) {
-  /* Removed sidebar overrides here because sidebar now acts as a drawer on all screens */
-  
+  /* Sidebar is a drawer on all screens – keep default */
   .auth {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
   }
   .authPanel {
-    min-height: 360px;
-    padding: 28px;
+    min-height: auto;
+    padding: 28px 20px;
   }
   .authCopy {
-    margin: 60px 0 0;
+    margin: 40px 0 0;
   }
   .authCopy h1 {
     font-size: 43px;
   }
   .authForm {
     padding: 20px;
+    flex: 1;
+  }
+  .formBox {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .formBox.wide {
+    width: 100%;
   }
   .grid2, .formGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
   .span2, .full {
-    grid-column: auto;
+    grid-column: auto !important;
   }
   .metrics {
     grid-template-columns: 1fr 1fr;
@@ -1007,30 +1020,89 @@ footer a {
     border: 0;
     z-index: 40;
   }
-}
 
-@media (max-width: 480px) {
-  .metrics {
-    grid-template-columns: 1fr;
+  /* Enhance form readability */
+  .formBox input,
+  .formBox select,
+  .formBox textarea,
+  form input,
+  form select,
+  form textarea {
+    font-size: 16px !important; /* Prevent zoom on iOS */
   }
+
+  .pageHead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .pageHead h1 {
+    font-size: 26px;
+  }
+  .pageHead button {
+    align-self: flex-start;
+  }
+
   .card {
     padding: 18px;
   }
-  .authCopy p:not(.eyebrow) {
-    font-size: 14px;
-  } 
+  .card.formGrid {
+    padding: 16px !important;
+  }
+  .card.formGrid label {
+    font-size: 12px;
+    gap: 4px;
+  }
+  .card.formGrid input,
+  .card.formGrid select,
+  .card.formGrid textarea {
+    font-size: 15px !important;
+    padding: 10px 12px !important;
+  }
+  .card.formGrid button.primary {
+    padding: 14px !important;
+    font-size: 15px !important;
+  }
+  .card.formGrid select {
+    width: 100% !important;
+  }
 }
 
-/* =========================================
-   BRIGHTENED AUTH / REGISTRATION OVERRIDES 
-   ========================================= */
+@media (max-width: 600px) {
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+  .cards3 {
+    grid-template-columns: 1fr;
+  }
+  .authCopy h1 {
+    font-size: 34px;
+  }
+}
 
-/* 1. Bright, airy gradient background */
+@media (max-width: 480px) {
+  .authPanel .eyebrow {
+    font-size: 11px;
+  }
+  .authCopy p {
+    font-size: 14px;
+  }
+  .authFoot {
+    display: none;
+  }
+  .content {
+    padding: 20px 16px;
+  }
+  .main header {
+    padding: 0 16px;
+  }
+}
+
+/* ---- Bright, airy gradient for auth pages (simpleAuth) ---- */
 .simpleAuth {
   background: linear-gradient(135deg, #f0f7ff 0%, #e0eeff 100%) !important;
 }
 
-/* 2. Pure white card with a vibrant, glowing shadow */
 .simpleAuth .formBox {
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
@@ -1039,7 +1111,6 @@ footer a {
   border-radius: 24px !important;
 }
 
-/* 3. Clean, light inputs and selects */
 .simpleAuth .formBox input,
 .simpleAuth .formBox select {
   border: 1px solid #e2e8f0 !important;
@@ -1049,7 +1120,6 @@ footer a {
   transition: all 0.2s ease !important;
 }
 
-/* 4. Bright blue glowing focus state for inputs */
 .simpleAuth .formBox input:focus,
 .simpleAuth .formBox select:focus {
   border-color: #2563eb !important;
@@ -1058,9 +1128,8 @@ footer a {
   outline: none !important;
 }
 
-/* 5. Transform the dark "Primary" button into a vibrant blue button */
 .simpleAuth .formBox button.primary {
-  background: #2563eb !important; /* Vibrant Royal Blue */
+  background: #2563eb !important;
   color: #ffffff !important;
   border: none !important;
   box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35) !important;
@@ -1071,12 +1140,11 @@ footer a {
 }
 
 .simpleAuth .formBox button.primary:hover {
-  background: #1d4ed8 !important; /* Slightly darker blue on hover */
+  background: #1d4ed8 !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 8px 25px rgba(37, 99, 235, 0.45) !important;
 }
 
-/* 6. Success/Info Messages inside the form */
 .simpleAuth .formBox .notice {
   background: #dbeafe !important;
   color: #1e40af !important;

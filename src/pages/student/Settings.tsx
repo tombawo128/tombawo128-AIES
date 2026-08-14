@@ -8,7 +8,7 @@ export const StudentSettings: React.FC = () => {
   const [phone, setPhone] = useState(user?.phone || '');
   const [address, setAddress] = useState(user?.address || '');
   const [major, setMajor] = useState(user?.major || '');
-  const [universityId, setUniversityId] = useState(user?.universityId || '');
+  const [universityId, setUniversityId] = useState(user?.university_id || '');
   const [saved, setSaved] = useState(false);
 
   const save = (e: React.FormEvent) => {
