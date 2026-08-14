@@ -19,8 +19,8 @@ export const CompanyInternships: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const fetchInternships = async () => {
-    if (!user?.companyId) return;
-    const { data } = await supabase.from('internships').select('*').eq('company_id', user.companyId).order('created_at', { ascending: false });
+    if (!user?.company_id) return;
+    const { data } = await supabase.from('internships').select('*').eq('company_id', user.company_id).order('created_at', { ascending: false });
     setInternships(data || []);
     setLoading(false);
   };
@@ -31,13 +31,13 @@ export const CompanyInternships: React.FC = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.companyId) {
+    if (!user?.company_id) {
       setMessage('No company linked to this account.');
       return;
     }
     const { error } = await supabase.from('internships').insert({
       title, description, skills, duration, location, deadline, positions,
-      company_id: user.companyId,
+      company_id: user.company_id,
     });
     if (error) {
       setMessage('Failed to post: ' + error.message);

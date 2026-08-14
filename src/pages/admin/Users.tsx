@@ -1,207 +1,208 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
 import { supabase } from '../../supabaseClient';
-
-interface UserRow {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  active: boolean;
-  verified: boolean;
-  company_id: string | null;
-  university_id: string | null;
-}
-
-const roleLabels: Record<string, string> = {
-  student: 'Students',
-  university: 'Universities',
-  company: 'Companies',
-  academicSupervisor: 'Academic Supervisors',
-  companySupervisor: 'Company Supervisors',
-  admin: 'Admins',
-};
-
-const roleOrder = ['student', 'university', 'company', 'academicSupervisor', 'companySupervisor', 'admin'];
+import { User } from '../../types';
 
 export const AdminUsers: React.FC = () => {
-  const { user } = useApp();
-  const [allUsers, setAllUsers] = useState<UserRow[]>([]);
+  const { user: currentUser } = useApp();
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [search, setSearch] = useState('');
-  const [live, setLive] = useState(false);
 
+  // Fetch all users (only admins can see this)
   const fetchUsers = async () => {
     setLoading(true);
-    const { data } = await supabase.from('users').select('*').order('name', { ascending: true });
-    setAllUsers(data || []);
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Failed to fetch users:', error);
+      setMessage('Error loading users.');
+    } else {
+      setUsers(data || []);
+    }
     setLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
-
-    // Real-time: refetch whenever any row in users changes
-    const channel = supabase
-      .channel('admin-users-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
-        setLive(true);
-        fetchUsers();
-        setTimeout(() => setLive(false), 1500);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
-  const logAction = async (action: string, targetId: string, details: string) => {
-    await supabase.from('audit_logs').insert({
-      user_id: user?.id,
-      user_name: user?.name,
-      action,
-      target_type: 'user',
-      target_id: targetId,
-      details,
-    });
-  };
+  // Approve user
+  const approveUser = async (userId: string) => {
+    if (!window.confirm('Approve this user? They will be able to log in.')) return;
 
-  const approveUser = async (u: UserRow) => {
-    const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
+    const { error } = await supabase
+      .from('users')
+      .update({ active: true, verified: true })
+      .eq('id', userId);
+
     if (error) {
       setMessage('Failed to approve: ' + error.message);
       return;
     }
-    if (u.company_id) {
-      await supabase.from('companies').update({ active: true, verified: true }).eq('id', u.company_id);
-    }
-    if (u.university_id && u.role === 'university') {
-      await supabase.from('universities').update({ active: true, verified: true }).eq('id', u.university_id);
-    }
-    await logAction('approve_user', u.id, u.name);
-    setMessage('User approved successfully.');
+
+    setMessage('User approved successfully!');
+    fetchUsers(); // Refresh list
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const rejectUser = async (u: UserRow) => {
-    if (!window.confirm(`Reject and remove ${u.name}'s pending registration? This cannot be undone.`)) return;
-    const { error } = await supabase.from('users').delete().eq('id', u.id).eq('active', false);
+  // Reject / Deactivate user
+  const rejectUser = async (userId: string) => {
+    if (!window.confirm('Reject this user? They will be deactivated.')) return;
+
+    const { error } = await supabase
+      .from('users')
+      .update({ active: false, verified: false })
+      .eq('id', userId);
+
     if (error) {
       setMessage('Failed to reject: ' + error.message);
       return;
     }
-    await logAction('reject_user', u.id, u.name);
-    setMessage('Registration rejected.');
-    setTimeout(() => setMessage(''), 3000);
-  };
 
-  const deactivateUser = async (u: UserRow) => {
-    if (!window.confirm(`Deactivate ${u.name}? They will lose access until reactivated.`)) return;
-    const { error } = await supabase.from('users').update({ active: false }).eq('id', u.id);
-    if (error) {
-      setMessage('Failed to deactivate: ' + error.message);
-      return;
-    }
-    await logAction('deactivate_user', u.id, u.name);
     setMessage('User deactivated.');
-    setTimeout(() => setMessage(''), 3000);
-  };
-
-  const approve_User = async (u: UserRow) => {
-    const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
-    if (error) {
-      setMessage('Failed to approve: ' + error.message);
-      return;
-    }
-    if (u.company_id) {
-      await supabase.from('companies').update({ active: true, verified: true }).eq('id', u.company_id);
-    }
-    if (u.university_id && u.role === 'university') {
-      await supabase.from('universities').update({ active: true, verified: true }).eq('id', u.university_id);
-    }
-    await logAction('approve_user', u.id, u.name);
-    setMessage('User approved successfully.');
     fetchUsers();
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return allUsers;
-    return allUsers.filter(
-      (u) => u.name.toLowerCase().includes(term) || u.email.toLowerCase().includes(term)
-    );
-  }, [allUsers, search]);
+  // Delete user (hard delete)
+  const deleteUser = async (userId: string) => {
+    if (!window.confirm('Permanently delete this user? This cannot be undone.')) return;
 
-  const grouped = useMemo(() => {
-    const groups: Record<string, UserRow[]> = {};
-    for (const role of roleOrder) groups[role] = [];
-    for (const u of filtered) {
-      if (!groups[u.role]) groups[u.role] = [];
-      groups[u.role].push(u);
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('id', userId);
+
+    if (error) {
+      setMessage('Failed to delete: ' + error.message);
+      return;
     }
-    return groups;
-  }, [filtered]);
 
-  if (!user || user.role !== 'admin') return <div>Access Denied. Only the General Admin can view this.</div>;
+    setMessage('User deleted.');
+    fetchUsers();
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  // Filter: Only show pending users (active = false) – you can remove this filter to see all
+  const pendingUsers = users.filter((u) => !u.active);
+  const activeUsers = users.filter((u) => u.active);
 
   return (
     <>
       <PageHead
-        eyebrow="Administrator"
-        title="All Users"
-        description={live ? ' Live update received...' : 'Browse, search, approve, and manage accounts across every role.'}
+        eyebrow="Admin"
+        title="User Management"
+        description="Approve or reject pending registrations."
       />
 
       {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
 
-      <input
-        type="text"
-        placeholder="Search by name or email..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        style={{ width: '100%', padding: '10px 14px', marginBottom: '20px', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.15)' }}
-      />
+      <div className="card">
+        <h2 style={{ fontSize: '16px', marginBottom: '12px' }}>
+          Pending Approvals ({pendingUsers.length})
+        </h2>
 
-      {loading ? (
-        <div style={{ padding: '20px', textAlign: 'center' }}>Loading users...</div>
-      ) : filtered.length === 0 ? (
-        <Empty title="No users found" text="Try a different search term." />
-      ) : (
-        roleOrder.map((role) =>
-          grouped[role] && grouped[role].length > 0 ? (
-            <div key={role} style={{ marginBottom: '24px' }}>
-              <h3>{roleLabels[role] || role} ({grouped[role].length})</h3>
-              <div className="card">
-                {grouped[role].map((u) => (
-                  <div className="row" key={u.id}>
-                    <div style={{ cursor: 'pointer' }} onClick={() => window.location.assign(`/admin/user/${u.id}`)}>
-                      <strong>{u.name}</strong>
-                      <span>{u.email}</span>
-                    </div>
-                    <div className="rowActions">
-                      <Status value={u.active ? 'Active' : 'Pending'} />
-                      {!u.active ? (
-                        <>
-                          <button className="primary" onClick={() => approveUser(u)}>Approve</button>
-                          <button className="ghost" onClick={() => rejectUser(u)}>Reject</button>
-                        </>
-                      ) : u.role !== 'admin' ? (
-                        <button className="ghost" onClick={() => deactivateUser(u)}>Deactivate</button>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+        ) : pendingUsers.length === 0 ? (
+          <Empty title="All clear!" text="No pending users need approval." />
+        ) : (
+          <div className="table">
+            <div className="thead">
+              <span>Name / Email</span>
+              <span>Role</span>
+              <span>University / Company</span>
+              <span>Actions</span>
             </div>
-          ) : null
-        )
-      )}
+
+            {pendingUsers.map((u) => (
+              <div className="trow" key={u.id}>
+                <div>
+                  <strong>{u.name}</strong>
+                  <small>{u.email}</small>
+                </div>
+                <div>
+                  <span className="status pending">{u.role}</span>
+                </div>
+                <div>
+                  <small>
+                    {u.university_id ? `University ID: ${u.university_id}` : ''}
+                    {u.company_id ? `Company ID: ${u.company_id}` : ''}
+                  </small>
+                </div>
+                <div className="rowActions">
+                  <button
+                    className="primary smallBtn"
+                    onClick={() => approveUser(u.id)}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="ghost smallBtn"
+                    onClick={() => rejectUser(u.id)}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    className="ghost smallBtn"
+                    style={{ color: '#76524f' }}
+                    onClick={() => deleteUser(u.id)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Optional: Show active users too */}
+      <div className="card" style={{ marginTop: '20px' }}>
+        <h2 style={{ fontSize: '16px', marginBottom: '12px' }}>
+          Active Users ({activeUsers.length})
+        </h2>
+        {activeUsers.length === 0 ? (
+          <Empty title="No active users yet." text="Approved users will appear here." />
+        ) : (
+          <div className="table">
+            <div className="thead">
+              <span>Name / Email</span>
+              <span>Role</span>
+              <span>Status</span>
+              <span>Actions</span>
+            </div>
+            {activeUsers.map((u) => (
+              <div className="trow" key={u.id}>
+                <div>
+                  <strong>{u.name}</strong>
+                  <small>{u.email}</small>
+                </div>
+                <div>
+                  <span className="status active">{u.role}</span>
+                </div>
+                <div>
+                  <span className="status approved">Verified</span>
+                </div>
+                <div className="rowActions">
+                  <button
+                    className="ghost smallBtn"
+                    onClick={() => rejectUser(u.id)}
+                  >
+                    Deactivate
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </>
   );
 };
