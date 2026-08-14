@@ -1,0 +1,16 @@
+# React / Node
+node_modules/
+dist/
+build/
+.env
+.env.local
+.DS_Store
+
+# XAMPP / Backend logs
+*.log
+logs/
+tmp/
+
+# IDE files
+.vscode/
+.idea/
