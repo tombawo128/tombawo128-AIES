@@ -8,59 +8,60 @@ export type Role =
 
 export type User = {
   id: string;
+  auth_id?: string;
   name: string;
   email: string;
-  password: string;
   role: Role;
   active: boolean;
   verified: boolean;
-  universityId?: string;
-  companyId?: string;
+  university_id?: string;
+  company_id?: string;
   phone?: string;
   address?: string;
-  major?: string;       
-  department?: string;   
+  major?: string;
+  department?: string;
+  created_at?: string;
 };
 
 export type Internship = {
   id: string;
   title: string;
-  companyId: string;
+  company_id: string;
   description: string;
-  skills: string[];
+  skills: string;
   duration: string;
   location: string;
   deadline: string;
   positions: number;
-  status: 'Open' | 'Closed';
+  created_at?: string;
 };
 
 export type Application = {
   id: string;
-  studentId: string;
-  internshipId: string;
+  student_id: string;
+  internship_id: string;
   date: string;
-  status: 'Applied' | 'Under Review' | 'Accepted' | 'Rejected' | 'Withdrawn';
-  coverLetter: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+  cover_letter?: string;
 };
 
 export type Report = {
   id: string;
-  studentId: string;
+  student_id: string;
   week: number;
   activities: string;
   challenges: string;
   skills: string;
-  hours?: number; 
+  hours?: number;
   date: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
-  fileName?: string;
+  status: 'submitted' | 'reviewed' | 'approved' | 'rejected';
+  file_name?: string;
 };
 
 export type Evaluation = {
   id: string;
-  applicationId: string;
-  evaluatorId: string;
+  application_id: string;
+  evaluator_id: string;
   scores: Record<string, number>;
   comments: string;
   date: string;
@@ -68,7 +69,7 @@ export type Evaluation = {
 
 export type Notification = {
   id: string;
-  userId: string;
+  user_id: string;
   title: string;
   message: string;
   read: boolean;
@@ -80,12 +81,26 @@ export type Company = {
   name: string;
   industry: string;
   location: string;
+  email?: string;
+  active?: boolean;
+  verified?: boolean;
 };
 
 export type University = {
   id: string;
   name: string;
   city: string;
+  email?: string;
+  active?: boolean;
+  verified?: boolean;
+};
+
+export type Department = {
+  id: string;
+  university_id: string;
+  department_name: string;
+  code?: string;
+  description?: string;
 };
 
 export type Data = {

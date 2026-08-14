@@ -11,11 +11,11 @@ export const CompanyInterns: React.FC = () => {
 
   useEffect(() => {
     const fetchInterns = async () => {
-      if (!user?.companyId) {
+      if (!user?.company_id) {
         setLoading(false);
         return;
       }
-      const { data: internships } = await supabase.from('internships').select('id, title').eq('company_id', user.companyId);
+      const { data: internships } = await supabase.from('internships').select('id, title').eq('company_id', user.company_id);
       const internshipIds = (internships || []).map((i) => i.id);
       if (internshipIds.length === 0) {
         setLoading(false);
