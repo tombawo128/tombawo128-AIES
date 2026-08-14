@@ -112,6 +112,24 @@ export const AdminUsers: React.FC = () => {
     setTimeout(() => setMessage(''), 3000);
   };
 
+  const approveUser = async (u: UserRow) => {
+    const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
+    if (error) {
+      setMessage('Failed to approve: ' + error.message);
+      return;
+    }
+    if (u.company_id) {
+      await supabase.from('companies').update({ active: true, verified: true }).eq('id', u.company_id);
+    }
+    if (u.university_id && u.role === 'university') {
+      await supabase.from('universities').update({ active: true, verified: true }).eq('id', u.university_id);
+    }
+    await logAction('approve_user', u.id, u.name);
+    setMessage('User approved successfully.');
+    fetchUsers();
+    setTimeout(() => setMessage(''), 3000);
+  };
+
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return allUsers;
@@ -137,7 +155,7 @@ export const AdminUsers: React.FC = () => {
       <PageHead
         eyebrow="Administrator"
         title="All Users"
-        description={live ? '🟢 Live update received...' : 'Browse, search, approve, and manage accounts across every role.'}
+        description={live ? ' Live update received...' : 'Browse, search, approve, and manage accounts across every role.'}
       />
 
       {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
