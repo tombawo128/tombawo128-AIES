@@ -100,6 +100,8 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   );
 };
 
+
+
 // --- FIX 2: Added proper TypeScript types for ProtectedShell ---
 interface ProtectedShellProps {
   roles: Role[];
@@ -223,5 +225,7 @@ const App = () => {
     </AppProvider>
   );
 };
+
+
 
 export default App;

@@ -22,7 +22,7 @@ export const UniversityDepartments: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const fetchDepartments = async () => {
-    if (!user?.universityId) {
+    if (!user?.university_id) {
       setLoading(false);
       return;
     }
@@ -30,7 +30,7 @@ export const UniversityDepartments: React.FC = () => {
     const { data } = await supabase
       .from('departments')
       .select('*')
-      .eq('university_id', user.universityId)
+      .eq('university_id', user.university_id)
       .order('department_name', { ascending: true });
     setDepartments(data || []);
     setLoading(false);
@@ -42,12 +42,12 @@ export const UniversityDepartments: React.FC = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.universityId) {
+    if (!user?.university_id) {
       setMessage('No university linked to this account.');
       return;
     }
     const { error } = await supabase.from('departments').insert({
-      university_id: user.universityId,
+      university_id: user.university_id,
       department_name: name,
       code,
       description,

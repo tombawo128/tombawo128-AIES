@@ -12,14 +12,14 @@ export const UniversityReports: React.FC = () => {
 
   useEffect(() => {
     const fetchReports = async () => {
-      if (!user?.universityId) {
+      if (!user?.university_id) {
         setLoading(false);
         return;
       }
       const { data: students } = await supabase
         .from('users')
         .select('id, name')
-        .eq('universityId', user.universityId)
+        .eq('university_id', user.university_id)
         .eq('role', 'student');
 
       const studentIds = (students || []).map((s) => s.id);

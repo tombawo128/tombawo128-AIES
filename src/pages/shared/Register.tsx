@@ -69,6 +69,7 @@ export const Register: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -79,6 +80,7 @@ export const Register: React.FC = () => {
       let companyId: string | undefined;
       let universityIdToUse: string | undefined = universityId || undefined;
 
+      // 2. Create company or university entity if needed
       if (role === 'company') {
         const { data: company, error: companyError } = await supabase
           .from('companies')
@@ -90,6 +92,10 @@ export const Register: React.FC = () => {
       }
 
       if (role === 'university') {
+        // Ensure university name is provided
+        if (!universityName.trim()) {
+          throw new Error('University name is required for university registration.');
+        }
         const { data: uni, error: uniError } = await supabase
           .from('universities')
           .insert({ name: universityName, city, email, active: false, verified: false })
@@ -97,9 +103,11 @@ export const Register: React.FC = () => {
           .single();
         if (uniError) throw new Error(uniError.message);
         universityIdToUse = uni.id;
+        console.log('Created university with ID:', universityIdToUse); // debug
       }
 
-      const { error: profileError } = await supabase.from('users').insert({
+      // 3. Insert user profile
+      const profileData = {
         auth_id: authData.user.id,
         name,
         email,
@@ -111,8 +119,18 @@ export const Register: React.FC = () => {
         major: role === 'student' ? major : null,
         university_id: universityIdToUse,
         company_id: companyId,
-      });
-      if (profileError) throw new Error(profileError.message);
+      };
+
+      const { error: profileError } = await supabase.from('users').insert(profileData);
+      if (profileError) {
+        console.error('Profile insert error:', profileError);
+        throw new Error(profileError.message);
+      }
+
+      // 4. (Optional) Double‑check that university_id was saved for university role
+      if (role === 'university' && !universityIdToUse) {
+        console.warn('University ID was not set in profile!');
+      }
 
       setMessage('Account created. You must wait for admin approval to sign in.');
       setTimeout(() => navigate('/login'), 900);
