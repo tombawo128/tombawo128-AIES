@@ -1,90 +1,118 @@
 import React, { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { supabase } from '../../supabaseClient';
 import { Logo } from '../../components/Logo';
-import { Icon } from '../../components/Icon';
 
 export const Login: React.FC = () => {
-  const { user, login, loading } = useApp();
   const navigate = useNavigate();
+  const { setUser } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // If already logged in, redirect to the correct dashboard
-  if (user) {
-    const home = (r: string) =>
-      `/${r === 'academicSupervisor' ? 'supervisor-academic' : r === 'companySupervisor' ? 'supervisor-company' : r}/dashboard`;
-    return <Navigate to={home(user.role)} replace />;
-  }
-
-  const submit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
+    setMessage('');
+    setLoading(true);
+
     try {
-      await login(email, password);
+      // 1. Sign in with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (authError) throw new Error(authError.message);
+      if (!authData.user) throw new Error('No user returned.');
+
+      // 2. Fetch the user's profile from the 'users' table
+      const { data: profile, error: profileError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (profileError) throw new Error('Profile not found. Please contact support.');
+
+      // 3. Check if the user is active (approved by admin)
+      if (!profile.active) {
+        setMessage('Your account is pending admin approval. Please try again later.');
+        await supabase.auth.signOut();
+        setLoading(false);
+        return;
+      }
+
+      // 4. Save user to context and redirect
+      setUser(profile);
+
+      // 5. Redirect based on role
+      const roleRoutes: Record<string, string> = {
+        student: '/student/dashboard',
+        company: '/company/dashboard',
+        university: '/university/dashboard',
+        academicSupervisor: '/supervisor-academic/dashboard',
+        companySupervisor: '/supervisor-company/dashboard',
+        admin: '/admin/dashboard',
+      };
+
+      const redirectPath = roleRoutes[profile.role] || '/student/dashboard';
+      navigate(redirectPath);
+
     } catch (err: any) {
-      setError(err.message);
+      setMessage(err.message || 'Login failed. Please check your credentials.');
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div className="auth">
-      <div className="authPanel">
-        <Logo light />
-        <div className="authCopy">
-          <p className="eyebrow">INTERNSHIP MANAGEMENT PLATFORM</p>
-          <h1>Manage internships with clarity.</h1>
-          <p>Connect students, universities, supervisors and organizations through one practical workspace.</p>
-        </div>
-        <div className="authFoot">AIES is designed for real academic and workplace workflows.</div>
-      </div>
-      <div className="authForm">
-        <div className="formBox">
-          <h2>Sign in</h2>
-          <p className="muted"></p>
-          <form onSubmit={submit} autoComplete="off">
-            <input type="text" style={{ display: 'none' }} autoComplete="username" />
-            <input type="password" style={{ display: 'none' }} autoComplete="new-password" />
+    <div className="simpleAuth">
+      <Logo />
+      <div className="formBox narrow">
+        <p className="eyebrow">WELCOME BACK</p>
+        <h1>Sign in to AIES</h1>
+        <p className="muted">Access your internships, reports, and evaluations.</p>
 
-            <label>
-              Email
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                name="email"
-                autoComplete="off"
-                required
-                disabled={loading || isSubmitting}
-              />
-            </label>
-            <label>
-              Password
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                name="password"
-                autoComplete="new-password"
-                required
-                disabled={loading || isSubmitting}
-              />
-            </label>
-            {error && <div className="error">{error}</div>}
-            <button className="primary" disabled={loading || isSubmitting}>
-              {isSubmitting ? 'Signing in...' : 'Sign in'}
-              {!isSubmitting && <Icon name="arrow" size={16} />}
-            </button>
-          </form>
-          <p className="small">
-            <a href="/register">Create account</a> · <a href="/forgot-password">Forgot password?</a>
-          </p>
-        </div>
+        <form onSubmit={handleLogin}>
+          <label>
+            Email
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="you@example.com"
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={loading}
+              placeholder="••••••••"
+              minLength={8}
+            />
+          </label>
+
+          <button className="primary full" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+
+          {message && <div className="notice">{message}</div>}
+        </form>
+
+        <Link to="/forgot-password" className="small">
+          Forgot password?
+        </Link>
+        <Link to="/register" className="small" style={{ marginLeft: '12px' }}>
+          Create account
+        </Link>
       </div>
     </div>
   );

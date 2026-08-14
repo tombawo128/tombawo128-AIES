@@ -1,61 +1,91 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Metric } from '../../components/common/Metric';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
+import { Link } from 'react-router-dom';
 
 export const StudentDashboard: React.FC = () => {
-  const { user, data } = useApp();
-  const studentApps = data.applications.filter((a) => a.student_id === user!.id);
-  const reports = data.reports.filter((r) => r.student_id === user!.id);
-  const open = data.internships.filter((i) => i.status === 'open').length;
-  const accepted = studentApps.filter((a) => a.status === 'accepted').length;
+  const { data, user } = useApp();
+
+  // Use deadline to determine "open" internships
+  const open = data.internships.filter((i) => new Date(i.deadline) > new Date()).length;
+
+  const pending = data.applications.filter((a) => a.student_id === user?.id && a.status === 'pending').length;
+  const accepted = data.applications.filter((a) => a.student_id === user?.id && a.status === 'accepted').length;
+  const reportsSubmitted = data.reports.filter((r) => r.student_id === user?.id).length;
 
   return (
     <>
-      <PageHead eyebrow="Student" title="Your internship workspace" description="Find opportunities, track applications and document your placement." />
+      <PageHead
+        eyebrow="Student"
+        title="Dashboard"
+        description="Overview of your internship journey."
+      />
       <div className="metrics">
-        <Metric label="Open internships" value={open} detail="Currently available" />
-        <Metric label="Your applications" value={studentApps.length} detail="Submitted" />
-        <Metric label="Accepted" value={accepted} detail="Current placements" />
-        <Metric label="Reports" value={reports.length} detail="Submitted records" />
+        <div className="metric">
+          <span>Open Internships</span>
+          <strong>{open}</strong>
+          <small>Available to apply</small>
+        </div>
+        <div className="metric">
+          <span>Pending Applications</span>
+          <strong>{pending}</strong>
+          <small>Awaiting response</small>
+        </div>
+        <div className="metric">
+          <span>Accepted</span>
+          <strong>{accepted}</strong>
+          <small>Placements confirmed</small>
+        </div>
+        <div className="metric">
+          <span>Reports Submitted</span>
+          <strong>{reportsSubmitted}</strong>
+          <small>Logbook entries</small>
+        </div>
       </div>
+
       <div className="dashboardGrid">
-        <section className="card">
+        <div className="card">
           <div className="sectionTitle">
             <div>
-              <h2>Recent applications</h2>
-              <p>Live records from the application workspace.</p>
+              <h2>Recent Internships</h2>
+              <p>Latest opportunities matching your profile</p>
             </div>
-            <a href="/student/applications" className="textLink">View all</a>
+            <Link to="/student/internships" className="textLink">
+              View all →
+            </Link>
           </div>
-          {studentApps.length ? (
-            studentApps.slice(0, 4).map((a) => {
-              const i = data.internships.find((x) => x.id === a.internship_id);
-              const c = data.companies.find((x) => x.id === i?.company_id);
-              return (
-                <div className="row" key={a.id}>
-                  <div>
-                    <strong>{i?.title}</strong>
-                    <span>{c?.name} · {a.date}</span>
-                  </div>
-                  <Status value={a.status} />
-                </div>
-              );
-            })
+          {data.internships.length === 0 ? (
+            <Empty title="No internships posted yet" text="Check back later." />
           ) : (
-            <Empty title="No applications yet" text="Apply to an open internship to get started." />
+            data.internships.slice(0, 3).map((internship) => (
+              <div className="row" key={internship.id}>
+                <div>
+                  <strong>{internship.title}</strong>
+                  <span>{internship.company_id}</span>
+                  <small>Deadline: {new Date(internship.deadline).toLocaleDateString()}</small>
+                </div>
+                <Link to={`/student/internships/${internship.id}`} className="primary smallBtn">
+                  View
+                </Link>
+              </div>
+            ))
           )}
-        </section>
-        <section className="card darkCard">
-          <p className="eyebrow lightText">WORKFLOW</p>
-          <h2>Keep your placement record current.</h2>
-          <p className="lightMuted">Use the dedicated workspace pages to manage internships, applications, reports and evaluations.</p>
+        </div>
+
+        <div className="card darkCard">
+          <h2>Your Next Step</h2>
+          <p className="lightMuted">
+            {pending > 0
+              ? `You have ${pending} pending application${pending > 1 ? 's' : ''}. Keep checking for updates!`
+              : accepted > 0
+              ? 'Congratulations! You have been accepted. Start your logbook reports.'
+              : 'Browse internships and start applying today.'}
+          </p>
           <div className="progressLine">
-            <span style={{ width: `${Math.min(100, Math.max(12, studentApps.length * 20))}%` }} />
+            <span style={{ width: `${accepted > 0 ? 100 : pending > 0 ? 50 : 10}%` }} />
           </div>
-        </section>
+        </div>
       </div>
     </>
   );

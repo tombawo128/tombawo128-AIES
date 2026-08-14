@@ -1,34 +1,59 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
 
 export const CompanySupervisorInterns: React.FC = () => {
   const { data, user } = useApp();
-  const companyInternships = data.internships.filter((i) => i.companyId === user!.companyId);
+
+  // Get internships for this company supervisor's company
+  const companyInternships = data.internships.filter((i) => i.company_id === user?.company_id);
+
+  // Get accepted applications for those internships
   const acceptedApps = data.applications.filter(
     (a) =>
-      a.status === 'Accepted' &&
-      companyInternships.some((i) => i.id === a.internshipId),
+      a.status === 'accepted' &&
+      companyInternships.some((i) => i.id === a.internship_id)
   );
-  const interns = acceptedApps.map((a) => data.users.find((u) => u.id === a.studentId)).filter(Boolean);
+
+  // Get the student users for those accepted applications
+  const interns = acceptedApps
+    .map((a) => data.users.find((u) => u.id === a.student_id))
+    .filter(Boolean);
 
   return (
     <>
-      <PageHead eyebrow="Company Supervisor" title="Current interns" description="Interns you are supervising." />
-      <div className="cards3">
-        {interns.length ? (
-          interns.map((s) => (
-            <div className="card" key={s!.id}>
-              <div className="companyMark large">{s!.name.slice(0, 1)}</div>
-              <h2>{s!.name}</h2>
-              <p>{s!.email}</p>
-              <Status value="Active" />
-            </div>
-          ))
+      <PageHead
+        eyebrow="Company Supervisor"
+        title="My Interns"
+        description="All interns currently placed at your company."
+      />
+      <div className="card">
+        {interns.length === 0 ? (
+          <Empty title="No interns yet" text="You don't have any interns assigned to you." />
         ) : (
-          <Empty title="No interns" text="No active interns at your company." />
+          <div className="table">
+            <div className="thead">
+              <span>Name</span>
+              <span>Email</span>
+              <span>Major</span>
+              <span>Internship</span>
+            </div>
+            {interns.map((student) => {
+              const app = acceptedApps.find((a) => a.student_id === student?.id);
+              const internship = companyInternships.find((i) => i.id === app?.internship_id);
+              return (
+                <div className="trow" key={student!.id}>
+                  <div>
+                    <strong>{student!.name}</strong>
+                  </div>
+                  <div>{student!.email}</div>
+                  <div>{student!.major || '—'}</div>
+                  <div>{internship?.title || '—'}</div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </>
