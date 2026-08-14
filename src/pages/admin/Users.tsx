@@ -33,6 +33,7 @@ export const AdminUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
+  const [live, setLive] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -43,7 +44,32 @@ export const AdminUsers: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+
+    // Real-time: refetch whenever any row in users changes
+    const channel = supabase
+      .channel('admin-users-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+        setLive(true);
+        fetchUsers();
+        setTimeout(() => setLive(false), 1500);
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
+
+  const logAction = async (action: string, targetId: string, details: string) => {
+    await supabase.from('audit_logs').insert({
+      user_id: user?.id,
+      user_name: user?.name,
+      action,
+      target_type: 'user',
+      target_id: targetId,
+      details,
+    });
+  };
 
   const approveUser = async (u: UserRow) => {
     const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
@@ -57,16 +83,32 @@ export const AdminUsers: React.FC = () => {
     if (u.university_id && u.role === 'university') {
       await supabase.from('universities').update({ active: true, verified: true }).eq('id', u.university_id);
     }
-    await supabase.from('audit_logs').insert({
-      user_id: user?.id,
-      user_name: user?.name,
-      action: 'approve_user',
-      target_type: 'user',
-      target_id: u.id,
-      details: u.name,
-    });
+    await logAction('approve_user', u.id, u.name);
     setMessage('User approved successfully.');
-    fetchUsers();
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const rejectUser = async (u: UserRow) => {
+    if (!window.confirm(`Reject and remove ${u.name}'s pending registration? This cannot be undone.`)) return;
+    const { error } = await supabase.from('users').delete().eq('id', u.id).eq('active', false);
+    if (error) {
+      setMessage('Failed to reject: ' + error.message);
+      return;
+    }
+    await logAction('reject_user', u.id, u.name);
+    setMessage('Registration rejected.');
+    setTimeout(() => setMessage(''), 3000);
+  };
+
+  const deactivateUser = async (u: UserRow) => {
+    if (!window.confirm(`Deactivate ${u.name}? They will lose access until reactivated.`)) return;
+    const { error } = await supabase.from('users').update({ active: false }).eq('id', u.id);
+    if (error) {
+      setMessage('Failed to deactivate: ' + error.message);
+      return;
+    }
+    await logAction('deactivate_user', u.id, u.name);
+    setMessage('User deactivated.');
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -92,7 +134,11 @@ export const AdminUsers: React.FC = () => {
 
   return (
     <>
-      <PageHead eyebrow="Administrator" title="All Users" description="Browse, search, and approve accounts across every role." />
+      <PageHead
+        eyebrow="Administrator"
+        title="All Users"
+        description={live ? '🟢 Live update received...' : 'Browse, search, approve, and manage accounts across every role.'}
+      />
 
       {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
 
@@ -116,17 +162,20 @@ export const AdminUsers: React.FC = () => {
               <div className="card">
                 {grouped[role].map((u) => (
                   <div className="row" key={u.id}>
-                    <div>
+                    <div style={{ cursor: 'pointer' }} onClick={() => window.location.assign(`/admin/user/${u.id}`)}>
                       <strong>{u.name}</strong>
                       <span>{u.email}</span>
                     </div>
                     <div className="rowActions">
                       <Status value={u.active ? 'Active' : 'Pending'} />
-                      {!u.active && (
-                        <button className="primary" onClick={() => approveUser(u)}>
-                          Approve
-                        </button>
-                      )}
+                      {!u.active ? (
+                        <>
+                          <button className="primary" onClick={() => approveUser(u)}>Approve</button>
+                          <button className="ghost" onClick={() => rejectUser(u)}>Reject</button>
+                        </>
+                      ) : u.role !== 'admin' ? (
+                        <button className="ghost" onClick={() => deactivateUser(u)}>Deactivate</button>
+                      ) : null}
                     </div>
                   </div>
                 ))}
