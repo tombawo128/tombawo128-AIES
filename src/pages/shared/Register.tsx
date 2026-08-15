@@ -107,7 +107,7 @@ export const Register: React.FC = () => {
 
       // 3. Insert user profile with auth_id
       const profileData = {
-        auth_id: authData.user.id,          // ✅ CRITICAL – links to Supabase Auth
+        auth_id: authData.user.id,         
         name,
         email,
         role,
