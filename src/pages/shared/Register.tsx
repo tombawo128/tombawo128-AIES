@@ -4,7 +4,7 @@ import { Logo } from '../../components/Logo';
 import { Role } from '../../types';
 import { supabase } from '../../supabaseClient';
 
-interface UniversityOption {
+interface OrgOption {
   id: string;
   name: string;
 }
@@ -27,10 +27,20 @@ export const Register: React.FC = () => {
   const [universityName, setUniversityName] = useState('');
   const [city, setCity] = useState('');
 
-  const [universities, setUniversities] = useState<UniversityOption[]>([]);
+  // For supervisor roles picking an existing org
+  const [supervisorCompanyId, setSupervisorCompanyId] = useState('');
+
+  const [universities, setUniversities] = useState<OrgOption[]>([]);
+  const [companies, setCompanies] = useState<OrgOption[]>([]);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState<Role[]>(['student', 'university', 'company']);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([
+    'student',
+    'university',
+    'company',
+    'academicSupervisor',
+    'companySupervisor',
+  ]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -42,13 +52,15 @@ export const Register: React.FC = () => {
         console.error('Admin count check failed', error);
         return;
       }
-      if (count === 0) setAvailableRoles(['student', 'university', 'company', 'admin']);
+      if (count === 0) {
+        setAvailableRoles(['student', 'university', 'company', 'academicSupervisor', 'companySupervisor', 'admin']);
+      }
     };
     checkAdmin();
   }, []);
 
   useEffect(() => {
-    if (role !== 'student') return;
+    if (role !== 'student' && role !== 'academicSupervisor') return;
     const fetchUniversities = async () => {
       const { data, error } = await supabase
         .from('universities')
@@ -63,13 +75,28 @@ export const Register: React.FC = () => {
     fetchUniversities();
   }, [role]);
 
+  useEffect(() => {
+    if (role !== 'companySupervisor') return;
+    const fetchCompanies = async () => {
+      const { data, error } = await supabase
+        .from('companies')
+        .select('id, name')
+        .eq('active', true);
+      if (error) {
+        console.error('Failed to fetch companies', error);
+        return;
+      }
+      setCompanies(data || []);
+    };
+    fetchCompanies();
+  }, [role]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage('');
     setIsSubmitting(true);
 
     try {
-      // 1. Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -80,7 +107,6 @@ export const Register: React.FC = () => {
       let companyId: string | undefined;
       let universityIdToUse: string | undefined = universityId || undefined;
 
-      // 2. Create company or university entity if needed
       if (role === 'company') {
         const { data: company, error: companyError } = await supabase
           .from('companies')
@@ -102,12 +128,20 @@ export const Register: React.FC = () => {
           .single();
         if (uniError) throw new Error(uniError.message);
         universityIdToUse = uni.id;
-        console.log('Created university with ID:', universityIdToUse);
       }
 
-      // 3. Insert user profile with auth_id
+      if (role === 'academicSupervisor') {
+        if (!universityId) throw new Error('Please select the university you work for.');
+        universityIdToUse = universityId;
+      }
+
+      if (role === 'companySupervisor') {
+        if (!supervisorCompanyId) throw new Error('Please select the company you work for.');
+        companyId = supervisorCompanyId;
+      }
+
       const profileData = {
-        auth_id: authData.user.id,         
+        auth_id: authData.user.id,
         name,
         email,
         role,
@@ -123,14 +157,17 @@ export const Register: React.FC = () => {
       const { error: profileError } = await supabase.from('users').insert(profileData);
       if (profileError) {
         console.error('Profile insert error:', profileError);
-        // If the error is about missing 'auth_id' column, suggest running the SQL
         if (profileError.message.includes('auth_id')) {
           throw new Error('Database setup incomplete: Please contact the administrator to add the auth_id column to the users table.');
         }
         throw new Error(profileError.message);
       }
 
-      setMessage('Account created. You must wait for admin approval to sign in.');
+      setMessage(
+        role === 'student'
+          ? 'Account created! You can now sign in.'
+          : 'Account created. You must wait for admin approval to sign in.'
+      );
       setTimeout(() => navigate('/login'), 900);
     } catch (err: any) {
       setMessage(err.message || 'Registration failed.');
@@ -139,13 +176,22 @@ export const Register: React.FC = () => {
     }
   };
 
+  const roleLabel = (r: Role) => {
+    const map: Record<string, string> = {
+      admin: 'General Admin (First time setup)',
+      academicSupervisor: 'Academic Supervisor',
+      companySupervisor: 'Company Supervisor',
+    };
+    return map[r] || r.charAt(0).toUpperCase() + r.slice(1);
+  };
+
   return (
     <div className="simpleAuth">
       <Logo />
       <div className="formBox wide">
         <p className="eyebrow">ACCOUNT SETUP</p>
         <h1>Create your AIES account</h1>
-        <p className="muted">Students, companies, and universities can register here. Registrations are reviewed by an admin before activation.</p>
+        <p className="muted">Students, companies, universities, and supervisors can register here. Some registrations are reviewed by an admin before activation.</p>
         <form onSubmit={submit} className="grid2">
           <label>
             Full name / Contact person
@@ -164,7 +210,7 @@ export const Register: React.FC = () => {
             <select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={isSubmitting}>
               {availableRoles.map((r) => (
                 <option key={r} value={r}>
-                  {r === 'admin' ? 'General Admin (First time setup)' : r.charAt(0).toUpperCase() + r.slice(1)}
+                  {roleLabel(r)}
                 </option>
               ))}
             </select>
@@ -226,6 +272,34 @@ export const Register: React.FC = () => {
                 <input value={city} onChange={(e) => setCity(e.target.value)} disabled={isSubmitting} />
               </label>
             </>
+          )}
+
+          {role === 'academicSupervisor' && (
+            <label className="span2">
+              University you work for
+              <select value={universityId} onChange={(e) => setUniversityId(e.target.value)} disabled={isSubmitting} required>
+                <option value="">Select university</option>
+                {universities.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+
+          {role === 'companySupervisor' && (
+            <label className="span2">
+              Company you work for
+              <select value={supervisorCompanyId} onChange={(e) => setSupervisorCompanyId(e.target.value)} disabled={isSubmitting} required>
+                <option value="">Select company</option>
+                {companies.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
 
           <button className="primary full" disabled={isSubmitting}>
