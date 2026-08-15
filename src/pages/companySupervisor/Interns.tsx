@@ -1,59 +1,48 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
 import { Empty } from '../../components/common/Empty';
+import { supabase } from '../../supabaseClient';
 
 export const CompanySupervisorInterns: React.FC = () => {
-  const { data, user } = useApp();
+  const { user } = useApp();
+  const [interns, setInterns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Get internships for this company supervisor's company
-  const companyInternships = data.internships.filter((i) => i.company_id === user?.company_id);
-
-  // Get accepted applications for those internships
-  const acceptedApps = data.applications.filter(
-    (a) =>
-      a.status === 'accepted' &&
-      companyInternships.some((i) => i.id === a.internship_id)
-  );
-
-  // Get the student users for those accepted applications
-  const interns = acceptedApps
-    .map((a) => data.users.find((u) => u.id === a.student_id))
-    .filter(Boolean);
+  useEffect(() => {
+    const fetchInterns = async () => {
+      if (!user?.company_id) { setLoading(false); return; }
+      const { data: internships } = await supabase.from('internships').select('id, title').eq('company_id', user.company_id);
+      const internshipIds = (internships || []).map((i) => i.id);
+      if (internshipIds.length === 0) { setLoading(false); return; }
+      const { data } = await supabase
+        .from('applications')
+        .select('id, users(id, name, email), internships(title)')
+        .in('internship_id', internshipIds)
+        .eq('status', 'accepted');
+      setInterns((data as any) || []);
+      setLoading(false);
+    };
+    fetchInterns();
+  }, [user]);
 
   return (
     <>
-      <PageHead
-        eyebrow="Company Supervisor"
-        title="My Interns"
-        description="All interns currently placed at your company."
-      />
-      <div className="card">
-        {interns.length === 0 ? (
-          <Empty title="No interns yet" text="You don't have any interns assigned to you." />
-        ) : (
-          <div className="table">
-            <div className="thead">
-              <span>Name</span>
-              <span>Email</span>
-              <span>Major</span>
-              <span>Internship</span>
+      <PageHead eyebrow="Company Supervisor" title="Interns" description="Students you are supervising." />
+      <div className="cards3">
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+        ) : interns.length ? (
+          interns.map((i) => (
+            <div className="card" key={i.id}>
+              <div className="companyMark large">{i.users?.name?.slice(0, 1) || '?'}</div>
+              <h2>{i.users?.name || 'Unknown'}</h2>
+              <p>{i.users?.email}</p>
+              <p><strong>Position:</strong> {i.internships?.title || '—'}</p>
             </div>
-            {interns.map((student) => {
-              const app = acceptedApps.find((a) => a.student_id === student?.id);
-              const internship = companyInternships.find((i) => i.id === app?.internship_id);
-              return (
-                <div className="trow" key={student!.id}>
-                  <div>
-                    <strong>{student!.name}</strong>
-                  </div>
-                  <div>{student!.email}</div>
-                  <div>{student!.major || '—'}</div>
-                  <div>{internship?.title || '—'}</div>
-                </div>
-              );
-            })}
-          </div>
+          ))
+        ) : (
+          <Empty title="No interns yet" text="Accepted applicants for your company will appear here." />
         )}
       </div>
     </>

@@ -1,55 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { PageHead } from '../../components/common/PageHead';
-import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
+import { Status } from '../../components/Status';
+import { supabase } from '../../supabaseClient';
 
 export const AcademicReports: React.FC = () => {
-  const { data, user, setData } = useApp();
-  const students = data.users.filter((u) => u.role === 'student' && u.university_id === user!.university_id);
-  const reports = data.reports.filter((r) => students.some((s) => s.id === r.student_id));
+  const { user } = useApp();
+  const [reports, setReports] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState('');
 
-  const review = (id: string, status: 'approved' | 'rejected') => {
-    setData({
-      ...data,
-      reports: data.reports.map((r) => (r.id === id ? { ...r, status } : r)),
-    });
+  const fetchReports = async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data: students } = await supabase.from('users').select('id, name').eq('supervisor_id', user.id);
+    const studentIds = (students || []).map((s) => s.id);
+    const nameMap: Record<string, string> = {};
+    (students || []).forEach((s) => { nameMap[s.id] = s.name; });
+
+    if (studentIds.length === 0) { setLoading(false); return; }
+
+    const { data } = await supabase.from('reports').select('*').in('student_id', studentIds).order('date', { ascending: false });
+    setReports((data || []).map((r) => ({ ...r, studentName: nameMap[r.student_id] })));
+    setLoading(false);
+  };
+
+  useEffect(() => { fetchReports(); }, [user]);
+
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase.from('reports').update({ status }).eq('id', id);
+    if (error) { setMessage('Failed: ' + error.message); return; }
+    setMessage(`Report ${status}.`);
+    fetchReports();
+    setTimeout(() => setMessage(''), 2500);
   };
 
   return (
     <>
-      <PageHead eyebrow="Academic Supervisor" title="Reports" description="Review student internship reports." />
-      <div className="card reportList">
-        {reports.length ? (
-          reports.map((r) => {
-            const student = students.find((s) => s.id === r.student_id);
-            return (
-              <div className="report" key={r.id}>
-                <div>
-                  <strong>Week {r.week}</strong>
-                  <span>{student?.name} · {r.date}</span>
-                  <p>{r.activities}</p>
-                  <small>Challenges: {r.challenges}</small>
-                  <small>Skills: {r.skills}</small>
-                </div>
-                <div className="rowActions">
-                  <Status value={r.status} />
-                  {r.status === 'submitted' && (
-                    <>
-                      <button className="primary smallBtn" onClick={() => review(r.id, 'approved')}>
-                        Approve
-                      </button>
-                      <button className="ghost smallBtn" onClick={() => review(r.id, 'rejected')}>
-                        Reject
-                      </button>
-                    </>
-                  )}
-                </div>
+      <PageHead eyebrow="Academic Supervisor" title="Reports" description="Review weekly reports from your students." />
+      {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
+      <div className="card">
+        {loading ? (
+          <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>
+        ) : reports.length ? (
+          reports.map((r) => (
+            <div className="report" key={r.id}>
+              <div>
+                <strong>{r.studentName} — Week {r.week}</strong>
+                <span>{r.date} · {r.hours || 0} hours</span>
+                <p>{r.activities}</p>
               </div>
-            );
-          })
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                <Status value={r.status} />
+                {r.status === 'submitted' && (
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button className="primary" onClick={() => updateStatus(r.id, 'approved')}>Approve</button>
+                    <button className="ghost" onClick={() => updateStatus(r.id, 'rejected')}>Reject</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
         ) : (
-          <Empty title="No reports" text="No student reports submitted yet." />
+          <Empty title="No reports yet" text="Reports from your assigned students will appear here." />
         )}
       </div>
     </>
