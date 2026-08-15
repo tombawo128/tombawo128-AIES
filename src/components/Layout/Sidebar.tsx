@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../supabaseClient';
 
 interface SidebarProps {
@@ -10,6 +11,7 @@ interface SidebarProps {
 
 export const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const { user } = useApp();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const closeSidebar = () => setOpen(false);
@@ -56,13 +58,12 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { to: '/admin/users', label: 'Users', roles: ['admin'] },
     { to: '/admin/companies', label: 'Companies', roles: ['admin'] },
     { to: '/admin/universities', label: 'Universities', roles: ['admin'] },
+    { to: '/admin/reports', label: 'Reports', roles: ['admin'] },
     { to: '/admin/logs', label: 'Logs', roles: ['admin'] },
     { to: '/admin/settings', label: 'Settings', roles: ['admin'] },
   ];
 
-  const filteredLinks = links.filter((link) =>
-    link.roles.includes(user?.role || 'student')
-  );
+  const filteredLinks = links.filter((link) => link.roles.includes(user?.role || 'student'));
 
   return (
     <>
@@ -91,6 +92,26 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
             </NavLink>
           ))}
         </nav>
+
+        <button
+          onClick={toggleTheme}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,.15)',
+            color: 'rgba(255,255,255,.7)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            fontSize: '13px',
+            fontWeight: 650,
+            marginTop: '10px',
+            cursor: 'pointer',
+          }}
+        >
+          {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
+        </button>
 
         <button className="sideLogout" onClick={handleLogout}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
