@@ -4,7 +4,6 @@ import { PageHead } from '../../components/common/PageHead';
 import { Empty } from '../../components/common/Empty';
 import { Status } from '../../components/Status';
 import { supabase } from '../../supabaseClient';
-import { AdminReports } from './pages/admin/Reports';
 
 export const AdminReports: React.FC = () => {
   const { user } = useApp();
