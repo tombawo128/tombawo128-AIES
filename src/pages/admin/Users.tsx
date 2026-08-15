@@ -4,6 +4,7 @@ import { PageHead } from '../../components/common/PageHead';
 import { Status } from '../../components/Status';
 import { Empty } from '../../components/common/Empty';
 import { supabase } from '../../supabaseClient';
+import { exportToCsv } from '../../utils/exportCsv';
 
 interface UserRow {
   id: string;
@@ -33,31 +34,19 @@ export const AdminUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [search, setSearch] = useState('');
-  const [live, setLive] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data } = await supabase.from('users').select('*').order('name', { ascending: true });
+    const { data, error } = await supabase.from('users').select('*').order('name', { ascending: true });
+    if (error) {
+      console.error('Failed to fetch users', error);
+    }
     setAllUsers(data || []);
     setLoading(false);
   };
 
   useEffect(() => {
     fetchUsers();
-
-    // Real-time: refetch whenever any row in users changes
-    const channel = supabase
-      .channel('admin-users-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
-        setLive(true);
-        fetchUsers();
-        setTimeout(() => setLive(false), 1500);
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, []);
 
   const logAction = async (action: string, targetId: string, details: string) => {
@@ -85,6 +74,7 @@ export const AdminUsers: React.FC = () => {
     }
     await logAction('approve_user', u.id, u.name);
     setMessage('User approved successfully.');
+    await fetchUsers();
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -97,6 +87,7 @@ export const AdminUsers: React.FC = () => {
     }
     await logAction('reject_user', u.id, u.name);
     setMessage('Registration rejected.');
+    await fetchUsers();
     setTimeout(() => setMessage(''), 3000);
   };
 
@@ -109,25 +100,19 @@ export const AdminUsers: React.FC = () => {
     }
     await logAction('deactivate_user', u.id, u.name);
     setMessage('User deactivated.');
+    await fetchUsers();
     setTimeout(() => setMessage(''), 3000);
   };
 
-  const approve_User = async (u: UserRow) => {
-    const { error } = await supabase.from('users').update({ active: true, verified: true }).eq('id', u.id);
-    if (error) {
-      setMessage('Failed to approve: ' + error.message);
-      return;
-    }
-    if (u.company_id) {
-      await supabase.from('companies').update({ active: true, verified: true }).eq('id', u.company_id);
-    }
-    if (u.university_id && u.role === 'university') {
-      await supabase.from('universities').update({ active: true, verified: true }).eq('id', u.university_id);
-    }
-    await logAction('approve_user', u.id, u.name);
-    setMessage('User approved successfully.');
-    fetchUsers();
-    setTimeout(() => setMessage(''), 3000);
+  const exportUsers = () => {
+    const rows = allUsers.map((u) => ({
+      Name: u.name,
+      Email: u.email,
+      Role: u.role,
+      Active: u.active ? 'Yes' : 'No',
+      Verified: u.verified ? 'Yes' : 'No',
+    }));
+    exportToCsv('users.csv', rows);
   };
 
   const filtered = useMemo(() => {
@@ -155,7 +140,8 @@ export const AdminUsers: React.FC = () => {
       <PageHead
         eyebrow="Administrator"
         title="All Users"
-        description={live ? ' Live update received...' : 'Browse, search, approve, and manage accounts across every role.'}
+        description="Browse, search, approve, and manage accounts across every role."
+        action={<button className="ghost" onClick={exportUsers}>Export CSV</button>}
       />
 
       {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}

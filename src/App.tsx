@@ -55,6 +55,7 @@ import { AdminCompanies } from './pages/admin/Companies';
 import { AdminUniversities } from './pages/admin/Universities';
 import { AdminSettings } from './pages/admin/Settings';
 import { AdminLogs } from './pages/admin/Logs';
+import { AdminReports } from './pages/admin/Reports';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -207,6 +208,7 @@ const App = () => {
                 <Route path="universities" element={<AdminUniversities />} />
                 <Route path="logs" element={<AdminLogs />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="reports" element={<AdminReports />} />
               </Routes>
             </ProtectedShell>
           }
