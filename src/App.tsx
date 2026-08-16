@@ -40,6 +40,7 @@ import { AcademicDashboard } from './pages/academicSupervisor/Dashboard';
 import { AcademicStudents } from './pages/academicSupervisor/Students';
 import { AcademicReports } from './pages/academicSupervisor/Reports';
 import { AcademicSettings } from './pages/academicSupervisor/Settings';
+import { AcademicEvaluations } from './pages/academicSupervisor/Evaluations';
 
 // Company Supervisor
 import { CompanySupervisorDashboard } from './pages/companySupervisor/Dashboard';
@@ -177,6 +178,7 @@ const App = () => {
                 <Route path="students" element={<AcademicStudents />} />
                 <Route path="reports" element={<AcademicReports />} />
                 <Route path="settings" element={<AcademicSettings />} />
+                <Route path="evaluations" element={<AcademicEvaluations />} />
               </Routes>
             </ProtectedShell>
           }

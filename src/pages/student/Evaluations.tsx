@@ -25,6 +25,12 @@ export const StudentEvaluations: React.FC = () => {
     fetchEvals();
   }, [user]);
 
+  {evaluations.length > 0 && (
+        <div className="notice" style={{ marginBottom: '18px' }}>
+          🎉 You have successfully completed your internship. See your evaluation below.
+        </div>
+      )}
+
   return (
     <>
       <PageHead eyebrow="Student" title="Evaluations" description="Feedback and scores from your internship supervisors." />

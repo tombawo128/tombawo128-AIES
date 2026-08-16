@@ -47,6 +47,7 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { to: '/supervisor-academic/dashboard', label: 'Dashboard', roles: ['academicSupervisor'] },
     { to: '/supervisor-academic/students', label: 'Students', roles: ['academicSupervisor'] },
     { to: '/supervisor-academic/reports', label: 'Reports', roles: ['academicSupervisor'] },
+    { to: '/supervisor-academic/evaluations', label: 'Evaluations', roles: ['academicSupervisor'] },
     { to: '/supervisor-academic/settings', label: 'Settings', roles: ['academicSupervisor'] },
 
     { to: '/supervisor-company/dashboard', label: 'Dashboard', roles: ['companySupervisor'] },
@@ -61,6 +62,7 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { to: '/admin/reports', label: 'Reports', roles: ['admin'] },
     { to: '/admin/logs', label: 'Logs', roles: ['admin'] },
     { to: '/admin/settings', label: 'Settings', roles: ['admin'] },
+
   ];
 
   const filteredLinks = links.filter((link) => link.roles.includes(user?.role || 'student'));
