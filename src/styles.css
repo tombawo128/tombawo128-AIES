@@ -496,3 +496,143 @@ form input, form select, form textarea,
   border: 1px solid var(--surface-border);
   color: var(--text);
 }
+
+
+/* ===================================================
+   DARK MODE — override remaining hardcoded dark colors
+=================================================== */
+
+[data-theme="dark"] .primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+[data-theme="dark"] .darkCard {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--surface-border);
+}
+
+[data-theme="dark"] .darkCard h2 {
+  color: var(--text);
+}
+
+[data-theme="dark"] .lightMuted {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .lightText {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .progressLine {
+  background: rgba(255, 255, 255, .1);
+}
+
+[data-theme="dark"] .progressLine span {
+  background: var(--accent);
+}
+
+[data-theme="dark"] .brandMark {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+[data-theme="dark"] .companyMark {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+[data-theme="dark"] .avatar {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+[data-theme="dark"] .status {
+  background: rgba(255, 255, 255, .08);
+  color: var(--text);
+}
+
+[data-theme="dark"] .status.applied,
+[data-theme="dark"] .status.open,
+[data-theme="dark"] .status.active,
+[data-theme="dark"] .status.approved,
+[data-theme="dark"] .status.accepted {
+  background: rgba(201, 242, 122, .18);
+  color: #c9f27a;
+}
+
+[data-theme="dark"] .status.under-review,
+[data-theme="dark"] .status.pending {
+  background: rgba(255, 200, 100, .15);
+  color: #ffc864;
+}
+
+[data-theme="dark"] .status.rejected,
+[data-theme="dark"] .status.withdrawn,
+[data-theme="dark"] .status.closed,
+[data-theme="dark"] .status.inactive {
+  background: rgba(255, 100, 100, .15);
+  color: #ff8080;
+}
+
+[data-theme="dark"] .chips span {
+  background: rgba(255, 255, 255, .08);
+  color: var(--text);
+}
+
+[data-theme="dark"] .empty {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .emptyIcon {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+[data-theme="dark"] .meta {
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .search {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+}
+
+[data-theme="dark"] .search input {
+  color: var(--text);
+}
+
+[data-theme="dark"] .toolbar select {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text);
+}
+
+[data-theme="dark"] .notice {
+  background: rgba(201, 242, 122, .15);
+  color: #c9f27a;
+}
+
+[data-theme="dark"] .error {
+  background: rgba(255, 100, 100, .12);
+  color: #ff8080;
+}
+
+[data-theme="dark"] .modalBox {
+  background: var(--surface);
+  color: var(--text);
+}
+
+[data-theme="dark"] .toggle {
+  background: rgba(255, 255, 255, .15);
+}
+
+/* Mobile burger icon — fix hardcoded dark stroke */
+[data-theme="dark"] .mobileMenu svg path {
+  stroke: var(--text);
+}
+
+[data-theme="dark"] .mobileMenu {
+  background: var(--surface);
+}
