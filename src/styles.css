@@ -412,19 +412,27 @@ footer a { color: inherit; text-decoration: none; }
   --text: #23212c;
   --text-muted: rgba(35, 33, 44, .52);
   --sidebar-bg: #23212c;
+  --sidebar-text: rgba(255, 255, 255, .58);
+  --sidebar-text-active: #23212c;
   --accent: #F1FEC8;
   --accent-text: #23212c;
+  --input-bg: #ffffff;
+  --input-border: rgba(35, 33, 44, .12);
 }
 
 [data-theme="dark"] {
-  --bg: #15141a;
-  --surface: #1e1d24;
-  --surface-border: rgba(255, 255, 255, .08);
+  --bg: #1a1922;
+  --surface: #24232d;
+  --surface-border: rgba(255, 255, 255, .1);
   --text: #f0f0ec;
-  --text-muted: rgba(240, 240, 236, .55);
-  --sidebar-bg: #0f0e13;
-  --accent: #F1FEC8;
-  --accent-text: #15141a;
+  --text-muted: rgba(240, 240, 236, .6);
+  --sidebar-bg: #15141c;
+  --sidebar-text: rgba(255, 255, 255, .75);
+  --sidebar-text-active: #1a1922;
+  --accent: #c9f27a;
+  --accent-text: #15141c;
+  --input-bg: #2c2b36;
+  --input-border: rgba(255, 255, 255, .15);
 }
 
 body {
@@ -434,9 +442,57 @@ body {
 }
 
 .app { background: var(--bg); }
-.card, .metric { background: var(--surface); border-color: var(--surface-border); }
-.main header { background: var(--surface); border-color: var(--surface-border); }
+
+.card, .metric {
+  background: var(--surface);
+  border-color: var(--surface-border);
+  color: var(--text);
+}
+
+.main header {
+  background: var(--surface);
+  border-color: var(--surface-border);
+}
+
 .content { color: var(--text); }
 .muted, .eyebrow { color: var(--text-muted); }
-.sidebar { background: var(--sidebar-bg); }
-.iconButton, .avatar, .mobileMenu { background: var(--surface); }
+
+.sidebar {
+  background: var(--sidebar-bg);
+}
+.sidebar nav a {
+  color: var(--sidebar-text);
+}
+.sidebar nav a.active {
+  background: var(--accent);
+  color: var(--sidebar-text-active);
+}
+.role { color: var(--accent); }
+.sideLogout { color: var(--sidebar-text); }
+
+.iconButton, .avatar, .mobileMenu {
+  background: var(--surface);
+  color: var(--text);
+}
+
+form input, form select, form textarea,
+.formBox input, .formBox select, .formBox textarea {
+  background: var(--input-bg);
+  border-color: var(--input-border);
+  color: var(--text);
+}
+
+.row { border-color: var(--surface-border); }
+.row span { color: var(--text-muted); }
+
+.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.primary:hover { opacity: .9; }
+
+.ghost {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: var(--text);
+}
