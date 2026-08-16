@@ -21,12 +21,10 @@ const roleLabels: Record<string, string> = {
   student: 'Students',
   university: 'Universities',
   company: 'Companies',
-  academicSupervisor: 'Academic Supervisors',
-  companySupervisor: 'Company Supervisors',
   admin: 'Admins',
 };
 
-const roleOrder = ['student', 'university', 'company', 'academicSupervisor', 'companySupervisor', 'admin'];
+const roleOrder = ['student', 'university', 'company', 'admin'];
 
 export const AdminUsers: React.FC = () => {
   const { user } = useApp();

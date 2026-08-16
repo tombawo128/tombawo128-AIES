@@ -7,8 +7,6 @@ const roleRoutes: Record<string, string> = {
   student: '/student/dashboard',
   company: '/company/dashboard',
   university: '/university/dashboard',
-  academicSupervisor: '/supervisor-academic/dashboard',
-  companySupervisor: '/supervisor-company/dashboard',
   admin: '/admin/dashboard',
 };
 
