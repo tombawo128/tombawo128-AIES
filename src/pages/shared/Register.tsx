@@ -28,19 +28,11 @@ export const Register: React.FC = () => {
   const [city, setCity] = useState('');
 
   // For supervisor roles picking an existing org
-  const [supervisorCompanyId, setSupervisorCompanyId] = useState('');
-
   const [universities, setUniversities] = useState<OrgOption[]>([]);
   const [companies, setCompanies] = useState<OrgOption[]>([]);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [availableRoles, setAvailableRoles] = useState<Role[]>([
-    'student',
-    'university',
-    'company',
-    'academicSupervisor',
-    'companySupervisor',
-  ]);
+  const [availableRoles, setAvailableRoles] = useState<Role[]>(['student', 'university', 'company']);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -53,43 +45,11 @@ export const Register: React.FC = () => {
         return;
       }
       if (count === 0) {
-        setAvailableRoles(['student', 'university', 'company', 'academicSupervisor', 'companySupervisor', 'admin']);
+        setAvailableRoles(['student', 'university', 'company', 'admin']);
       }
     };
     checkAdmin();
   }, []);
-
-  useEffect(() => {
-    if (role !== 'student' && role !== 'academicSupervisor') return;
-    const fetchUniversities = async () => {
-      const { data, error } = await supabase
-        .from('universities')
-        .select('id, name')
-        .eq('active', true);
-      if (error) {
-        console.error('Failed to fetch universities', error);
-        return;
-      }
-      setUniversities(data || []);
-    };
-    fetchUniversities();
-  }, [role]);
-
-  useEffect(() => {
-    if (role !== 'companySupervisor') return;
-    const fetchCompanies = async () => {
-      const { data, error } = await supabase
-        .from('companies')
-        .select('id, name')
-        .eq('active', true);
-      if (error) {
-        console.error('Failed to fetch companies', error);
-        return;
-      }
-      setCompanies(data || []);
-    };
-    fetchCompanies();
-  }, [role]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,15 +90,7 @@ export const Register: React.FC = () => {
         universityIdToUse = uni.id;
       }
 
-      if (role === 'academicSupervisor') {
-        if (!universityId) throw new Error('Please select the university you work for.');
-        universityIdToUse = universityId;
-      }
-
-      if (role === 'companySupervisor') {
-        if (!supervisorCompanyId) throw new Error('Please select the company you work for.');
-        companyId = supervisorCompanyId;
-      }
+    
 
       const profileData = {
         auth_id: authData.user.id,
@@ -191,7 +143,7 @@ export const Register: React.FC = () => {
       <div className="formBox wide">
         <p className="eyebrow">ACCOUNT SETUP</p>
         <h1>Create your AIES account</h1>
-        <p className="muted">Students, companies, universities, and supervisors can register here. Some registrations are reviewed by an admin before activation.</p>
+        <p className="muted">Students, companies and  universities, can register here. Some registrations are reviewed by an admin before activation.</p>
         <form onSubmit={submit} className="grid2">
           <label>
             Full name / Contact person
@@ -272,34 +224,6 @@ export const Register: React.FC = () => {
                 <input value={city} onChange={(e) => setCity(e.target.value)} disabled={isSubmitting} />
               </label>
             </>
-          )}
-
-          {role === 'academicSupervisor' && (
-            <label className="span2">
-              University you work for
-              <select value={universityId} onChange={(e) => setUniversityId(e.target.value)} disabled={isSubmitting} required>
-                <option value="">Select university</option>
-                {universities.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-
-          {role === 'companySupervisor' && (
-            <label className="span2">
-              Company you work for
-              <select value={supervisorCompanyId} onChange={(e) => setSupervisorCompanyId(e.target.value)} disabled={isSubmitting} required>
-                <option value="">Select company</option>
-                {companies.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
           )}
 
           <button className="primary full" disabled={isSubmitting}>

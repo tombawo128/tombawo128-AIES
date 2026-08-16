@@ -40,20 +40,9 @@ export const Sidebar = ({ open, setOpen }: SidebarProps) => {
     { to: '/university/dashboard', label: 'Dashboard', roles: ['university'] },
     { to: '/university/students', label: 'Students', roles: ['university'] },
     { to: '/university/departments', label: 'Departments', roles: ['university'] },
-    { to: '/university/supervisors', label: 'Supervisors', roles: ['university'] },
     { to: '/university/reports', label: 'Reports', roles: ['university'] },
+    { to: '/university/evaluations', label: 'Evaluations', roles: ['university'] },
     { to: '/university/settings', label: 'Settings', roles: ['university'] },
-
-    { to: '/supervisor-academic/dashboard', label: 'Dashboard', roles: ['academicSupervisor'] },
-    { to: '/supervisor-academic/students', label: 'Students', roles: ['academicSupervisor'] },
-    { to: '/supervisor-academic/reports', label: 'Reports', roles: ['academicSupervisor'] },
-    { to: '/supervisor-academic/evaluations', label: 'Evaluations', roles: ['academicSupervisor'] },
-    { to: '/supervisor-academic/settings', label: 'Settings', roles: ['academicSupervisor'] },
-
-    { to: '/supervisor-company/dashboard', label: 'Dashboard', roles: ['companySupervisor'] },
-    { to: '/supervisor-company/interns', label: 'Interns', roles: ['companySupervisor'] },
-    { to: '/supervisor-company/evaluations', label: 'Evaluations', roles: ['companySupervisor'] },
-    { to: '/supervisor-company/settings', label: 'Settings', roles: ['companySupervisor'] },
 
     { to: '/admin/dashboard', label: 'Dashboard', roles: ['admin'] },
     { to: '/admin/users', label: 'Users', roles: ['admin'] },

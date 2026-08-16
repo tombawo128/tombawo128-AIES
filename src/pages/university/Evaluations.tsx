@@ -6,7 +6,7 @@ import { supabase } from '../../supabaseClient';
 
 const CRITERIA = ['discipline', 'academicApplication', 'professionalGrowth', 'communication', 'overallPerformance'];
 
-export const AcademicEvaluations: React.FC = () => {
+export const UniversityEvaluations: React.FC = () => {
   const { user } = useApp();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,14 +16,15 @@ export const AcademicEvaluations: React.FC = () => {
   const [message, setMessage] = useState('');
 
   const fetchStudents = async () => {
-    if (!user) { setLoading(false); return; }
+    if (!user?.university_id) { setLoading(false); return; }
     setLoading(true);
-    const { data: assignedStudents } = await supabase
+    const { data: universityStudents } = await supabase
       .from('users')
       .select('id, name, email')
-      .eq('supervisor_id', user.id);
+      .eq('university_id', user.university_id)
+      .eq('role', 'student');
 
-    const studentIds = (assignedStudents || []).map((s) => s.id);
+    const studentIds = (universityStudents || []).map((s) => s.id);
     if (studentIds.length === 0) { setStudents([]); setLoading(false); return; }
 
     const { data: apps } = await supabase
@@ -32,7 +33,7 @@ export const AcademicEvaluations: React.FC = () => {
       .in('student_id', studentIds)
       .eq('status', 'accepted');
 
-    const merged = (assignedStudents || []).map((s) => ({
+    const merged = (universityStudents || []).map((s) => ({
       ...s,
       application: (apps || []).find((a) => a.student_id === s.id),
     }));
@@ -64,10 +65,7 @@ export const AcademicEvaluations: React.FC = () => {
       setMessage('Failed: ' + error.message);
       return;
     }
-
-    // Mark internship as completed
     await supabase.from('applications').update({ internship_status: 'completed' }).eq('id', selected.application.id);
-
     setMessage(`Evaluation submitted. ${selected.name}'s internship is now marked complete.`);
     setSelected(null);
     fetchStudents();
@@ -76,15 +74,13 @@ export const AcademicEvaluations: React.FC = () => {
 
   return (
     <>
-      <PageHead eyebrow="Academic Supervisor" title="Final Evaluations" description="Evaluate your students' completed internship period." />
+      <PageHead eyebrow="University" title="Final Evaluations" description="Evaluate your students' completed internship period." />
       {message && <div className="notice" style={{ marginBottom: '15px' }}>{message}</div>}
 
       {selected ? (
         <form className="card formGrid" onSubmit={submit}>
           <h3 className="span2">Evaluating {selected.name}</h3>
-          {!selected.application && (
-            <div className="error span2">No accepted internship found for this student yet.</div>
-          )}
+          {!selected.application && <div className="error span2">No accepted internship found for this student yet.</div>}
           {CRITERIA.map((c) => (
             <label key={c}>
               {c.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase())} (1-5)
@@ -106,22 +102,15 @@ export const AcademicEvaluations: React.FC = () => {
               <div className="row" key={s.id}>
                 <div>
                   <strong>{s.name}</strong>
-                  <span>
-                    {s.application?.internships?.title || 'No active internship'} ·{' '}
-                    {s.application?.internship_status === 'completed' ? 'Completed' : 'In progress'}
-                  </span>
+                  <span>{s.application?.internships?.title || 'No active internship'} · {s.application?.internship_status === 'completed' ? 'Completed' : 'In progress'}</span>
                 </div>
-                <button
-                  className="primary"
-                  onClick={() => openForm(s)}
-                  disabled={s.application?.internship_status === 'completed'}
-                >
+                <button className="primary" onClick={() => openForm(s)} disabled={s.application?.internship_status === 'completed'}>
                   {s.application?.internship_status === 'completed' ? 'Already evaluated' : 'Evaluate'}
                 </button>
               </div>
             ))
           ) : (
-            <Empty title="No students assigned" text="Ask your university admin to assign students to you." />
+            <Empty title="No students yet" text="Students registered under your university will appear here." />
           )}
         </div>
       )}

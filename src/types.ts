@@ -1,10 +1,5 @@
-export type Role =
-  | 'student'
-  | 'company'
-  | 'university'
-  | 'academicSupervisor'
-  | 'companySupervisor'
-  | 'admin';
+export type Role = 'student' | 'company' | 'university' | 'admin';
+ 
 
 export type User = {
   id: string;

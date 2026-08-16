@@ -31,22 +31,10 @@ import { CompanySettings } from './pages/company/Settings';
 import { UniversityDashboard } from './pages/university/Dashboard';
 import { UniversityStudents } from './pages/university/Students';
 import { UniversityDepartments } from './pages/university/Departments';
-import { UniversitySupervisors } from './pages/university/Supervisors';
 import { UniversityReports } from './pages/university/Reports';
 import { UniversitySettings } from './pages/university/Settings';
+import { UniversityEvaluations } from './pages/university/Evaluations';
 
-// Academic Supervisor
-import { AcademicDashboard } from './pages/academicSupervisor/Dashboard';
-import { AcademicStudents } from './pages/academicSupervisor/Students';
-import { AcademicReports } from './pages/academicSupervisor/Reports';
-import { AcademicSettings } from './pages/academicSupervisor/Settings';
-import { AcademicEvaluations } from './pages/academicSupervisor/Evaluations';
-
-// Company Supervisor
-import { CompanySupervisorDashboard } from './pages/companySupervisor/Dashboard';
-import { CompanySupervisorInterns } from './pages/companySupervisor/Interns';
-import { CompanySupervisorEvaluations } from './pages/companySupervisor/Evaluations';
-import { CompanySupervisorSettings } from './pages/companySupervisor/Settings';
 
 // Admin
 import { AdminDashboard } from './pages/admin/Dashboard';
@@ -161,38 +149,9 @@ const App = () => {
                 <Route path="dashboard" element={<UniversityDashboard />} />
                 <Route path="students" element={<UniversityStudents />} />
                 <Route path="departments" element={<UniversityDepartments />} />
-                <Route path="supervisors" element={<UniversitySupervisors />} />
                 <Route path="reports" element={<UniversityReports />} />
                 <Route path="settings" element={<UniversitySettings />} />
-              </Routes>
-            </ProtectedShell>
-          }
-        />
-
-        <Route
-          path="/supervisor-academic/*"
-          element={
-            <ProtectedShell roles={['academicSupervisor']}>
-              <Routes>
-                <Route path="dashboard" element={<AcademicDashboard />} />
-                <Route path="students" element={<AcademicStudents />} />
-                <Route path="reports" element={<AcademicReports />} />
-                <Route path="settings" element={<AcademicSettings />} />
-                <Route path="evaluations" element={<AcademicEvaluations />} />
-              </Routes>
-            </ProtectedShell>
-          }
-        />
-
-        <Route
-          path="/supervisor-company/*"
-          element={
-            <ProtectedShell roles={['companySupervisor']}>
-              <Routes>
-                <Route path="dashboard" element={<CompanySupervisorDashboard />} />
-                <Route path="interns" element={<CompanySupervisorInterns />} />
-                <Route path="evaluations" element={<CompanySupervisorEvaluations />} />
-                <Route path="settings" element={<CompanySupervisorSettings />} />
+                <Route path="evaluations" element={<UniversityEvaluations />} />
               </Routes>
             </ProtectedShell>
           }
