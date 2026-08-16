@@ -27,9 +27,7 @@ export const Register: React.FC = () => {
   const [universityName, setUniversityName] = useState('');
   const [city, setCity] = useState('');
 
-  // For supervisor roles picking an existing org
   const [universities, setUniversities] = useState<OrgOption[]>([]);
-  const [companies, setCompanies] = useState<OrgOption[]>([]);
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableRoles, setAvailableRoles] = useState<Role[]>(['student', 'university', 'company']);
@@ -50,6 +48,22 @@ export const Register: React.FC = () => {
     };
     checkAdmin();
   }, []);
+
+  useEffect(() => {
+    if (role !== 'student') return;
+    const fetchUniversities = async () => {
+      const { data, error } = await supabase
+        .from('universities')
+        .select('id, name')
+        .eq('active', true);
+      if (error) {
+        console.error('Failed to fetch universities', error);
+        return;
+      }
+      setUniversities(data || []);
+    };
+    fetchUniversities();
+  }, [role]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,8 +104,6 @@ export const Register: React.FC = () => {
         universityIdToUse = uni.id;
       }
 
-    
-
       const profileData = {
         auth_id: authData.user.id,
         name,
@@ -129,12 +141,8 @@ export const Register: React.FC = () => {
   };
 
   const roleLabel = (r: Role) => {
-    const map: Record<string, string> = {
-      admin: 'General Admin (First time setup)',
-      academicSupervisor: 'Academic Supervisor',
-      companySupervisor: 'Company Supervisor',
-    };
-    return map[r] || r.charAt(0).toUpperCase() + r.slice(1);
+    if (r === 'admin') return 'General Admin (First time setup)';
+    return r.charAt(0).toUpperCase() + r.slice(1);
   };
 
   return (
@@ -143,7 +151,7 @@ export const Register: React.FC = () => {
       <div className="formBox wide">
         <p className="eyebrow">ACCOUNT SETUP</p>
         <h1>Create your AIES account</h1>
-        <p className="muted">Students, companies and  universities, can register here. Some registrations are reviewed by an admin before activation.</p>
+        <p className="muted">Students, companies and universities can register here. Some registrations are reviewed by an admin before activation.</p>
         <form onSubmit={submit} className="grid2">
           <label>
             Full name / Contact person
